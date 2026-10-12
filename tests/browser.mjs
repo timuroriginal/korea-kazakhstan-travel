@@ -32,6 +32,42 @@ try {
     for(const id of ids){await go(`routes/${id}`);assert.equal(await page.locator(`a[href="#/destinations/${id}"]`).count(),1);await page.reload();await page.locator('h1').waitFor();}
     await go('routes');assert.equal(await page.locator('#route-directory a').count(),6);
   });
+  await check('Geographic explorer shows 20 real regions and six destination markers',async()=>{
+    await go('routes');assert.equal(await page.locator('.map-area').count(),20);assert.equal(await page.locator('.map-marker').count(),6);assert.equal(await page.locator('[data-map-choice]').count(),6);
+    assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'almaty');
+    assert.equal(await page.locator('.map-area.is-selected').count(),2);
+    assert.equal(await page.locator('[data-region="KAZ001"]').count(),1); // Abay, created in 2022.
+    assert.equal(await page.locator('[data-region="KAZ010"]').count(),1); // Jetisu.
+    assert.equal(await page.locator('[data-region="KAZ019"]').count(),1); // Ulytau.
+  });
+  await check('List, geographic regions, marker hover and carousel stay synchronized',async()=>{
+    await page.locator('[data-map-choice="aktau"]').click();assert.equal(await page.locator('[data-region="KAZ014"]').getAttribute('class'),'map-area map-target is-selected');
+    assert.equal(await page.locator('#route-map-card a').getAttribute('href'),'#/routes/aktau');
+    await page.locator('.map-marker[data-map-target="turkistan"] .marker-hit').hover();assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'turkistan');
+    assert.equal(await page.locator('[data-map-choice="turkistan"]').getAttribute('aria-pressed'),'true');
+    await page.locator('[data-map-cycle="1"]').click();assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'almaty');
+    await page.locator('[data-map-choice="aktau"]').click();
+    const region=page.locator('.map-regions [data-region="KAZ005"]');await region.scrollIntoViewIfNeeded();
+    const point=await region.evaluate(path=>{
+      const b=path.getBBox(),m=path.getScreenCTM();
+      for(let y=b.y+5;y<b.y+b.height;y+=5)for(let x=b.x+5;x<b.x+b.width;x+=5){
+        if(!path.isPointInFill(new DOMPoint(x,y)))continue;
+        const p=new DOMPoint(x,y).matrixTransform(m);
+        if(document.elementFromPoint(p.x,p.y)===path)return {x:p.x,y:p.y};
+      }
+      throw new Error('No visible interior point found');
+    });
+    await page.mouse.move(point.x,point.y);assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'almaty');
+    await page.locator('[data-map-choice="burabay"]').focus();assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'burabay');
+    assert.equal(await page.locator('[data-region="KAZ002"]').getAttribute('class'),'map-area map-target is-selected');
+  });
+  await check('Touch marker selection and mobile explorer have no overflow',async()=>{
+    const mobile=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});const p=await mobile.newPage();p.on('pageerror',e=>failures.push(e.message));
+    await p.goto(`${base}/#/routes`);await p.locator('.map-marker[data-map-target="aktau"] .marker-hit').tap();assert.equal(await p.locator('#route-map-card').getAttribute('data-destination'),'aktau');
+    await p.locator('[data-map-choice="astana"]').tap();assert.equal(await p.locator('#route-map-card').getAttribute('data-destination'),'astana');
+    for(const width of [320,390,768,1280]){await p.setViewportSize({width,height:900});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);}
+    await mobile.close();
+  });
   await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
   await check('Almaty to Kok-Tobe, language toggle preserves nested route',async()=>{await go('destinations/almaty');await page.locator('a[href="#/places/kok-tobe"]').click();await page.locator('[data-gallery="0"]').waitFor();await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('html').getAttribute('lang'),'ru');assert.match(await page.locator('h1').innerText(),/Кок-Тобе/);assert.match(page.url(),/#\/places\/kok-tobe/);await page.reload();await page.locator('[data-gallery="0"]').waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'ru');});
   await check('Gallery and video dialog close on Escape and button',async()=>{await page.locator('[data-gallery="2"]').click();assert.match(await page.locator('#gallery-stage').innerText(),/Прогулка/);await page.locator('[data-gallery="3"]').click();await page.locator('#gallery-stage [data-video]').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);assert.match(await page.locator('dialog').innerText(),/Видео пока не загружено/);await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);await page.locator('#gallery-stage [data-video]').click();await page.locator('#dialog-close').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);});
@@ -46,5 +82,7 @@ try {
   await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1280,height:900});await go();await page.screenshot({path:'test-results/home-desktop.png',fullPage:true});
   await go('places/kok-tobe');await page.screenshot({path:'test-results/kok-tobe-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});await go('destinations/almaty');await page.screenshot({path:'test-results/almaty-mobile.png',fullPage:true});
+  await page.setViewportSize({width:1280,height:900});await go('routes');await page.locator('#route-explorer').screenshot({path:'test-results/routes-map-desktop.png'});
+  await page.setViewportSize({width:390,height:844});await go('routes');await page.screenshot({path:'test-results/routes-map-mobile.png',fullPage:true});
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
