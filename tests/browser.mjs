@@ -17,6 +17,21 @@ async function noOverflow(){assert.equal(await page.evaluate(()=>document.docume
 try {
   await check('Korean home and six destinations',async()=>{const r=await page.goto(base);assert.equal(r.status(),200);await page.locator('.destination-card').first().waitFor();assert.equal(await page.locator('.destination-card').count(),6);assert.equal(await page.locator('html').getAttribute('lang'),'ko');});
   await check('Search and topic filters combine; empty results recover',async()=>{await page.locator('[data-filter="water"]').click();assert.equal(await page.locator('.destination-card').count(),2);await page.locator('#destination-search').fill('Aktau');assert.equal(await page.locator('.destination-card').count(),1);await page.locator('#destination-search').fill('no-such-city');assert.equal(await page.locator('.destination-card').count(),0);await page.locator('#destination-search').fill('');await page.locator('[data-filter="all"]').click();assert.equal(await page.locator('.destination-card').count(),6);});
+  await check('Owner-defined themes show the intended destinations',async()=>{
+    const expected={nature:['almaty','ust-kamenogorsk','burabay'],city:['almaty','astana','turkistan'],culture:['almaty','astana','turkistan'],food:['almaty','astana','aktau','turkistan'],water:['aktau','burabay']};
+    for(const [theme,ids] of Object.entries(expected)){
+      await page.locator(`[data-filter="${theme}"]`).click();
+      assert.deepEqual(await page.locator('.destination-card').evaluateAll(links=>links.map(a=>a.getAttribute('href').split('/').at(-1))),ids);
+    }
+    await page.locator('[data-filter="all"]').click();
+  });
+  await check('Six independent route sections and six destination promo slots',async()=>{
+    const ids=['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan'];
+    assert.deepEqual(await page.locator('#home-routes a').evaluateAll(links=>links.map(a=>a.getAttribute('href'))),ids.map(id=>`#/routes/${id}`));
+    assert.deepEqual(await page.locator('#home-promos [data-video]').evaluateAll(buttons=>buttons.map(b=>b.dataset.video)),ids.map(id=>`${id}-video`));
+    for(const id of ids){await go(`routes/${id}`);assert.equal(await page.locator(`a[href="#/destinations/${id}"]`).count(),1);await page.reload();await page.locator('h1').waitFor();}
+    await go('routes');assert.equal(await page.locator('#route-directory a').count(),6);
+  });
   await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
   await check('Almaty to Kok-Tobe, language toggle preserves nested route',async()=>{await go('destinations/almaty');await page.locator('a[href="#/places/kok-tobe"]').click();await page.locator('[data-gallery="0"]').waitFor();await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('html').getAttribute('lang'),'ru');assert.match(await page.locator('h1').innerText(),/Кок-Тобе/);assert.match(page.url(),/#\/places\/kok-tobe/);await page.reload();await page.locator('[data-gallery="0"]').waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'ru');});
   await check('Gallery and video dialog close on Escape and button',async()=>{await page.locator('[data-gallery="2"]').click();assert.match(await page.locator('#gallery-stage').innerText(),/Прогулка/);await page.locator('[data-gallery="3"]').click();await page.locator('#gallery-stage [data-video]').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);assert.match(await page.locator('dialog').innerText(),/Видео пока не загружено/);await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);await page.locator('#gallery-stage [data-video]').click();await page.locator('#dialog-close').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);});
