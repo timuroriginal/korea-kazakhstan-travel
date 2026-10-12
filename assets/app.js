@@ -1,3 +1,4 @@
+import { routeMapMarkup, mountRouteMap } from './route-map.js';
 import { destinations, interests, practical, kokTobe, media } from './catalog.js';
 
 const app = document.getElementById('app');
@@ -105,7 +106,7 @@ function routesPage(id) {
     const area=d.id==='burabay';
     return `${breadcrumb([{label:t('여행 일정','Маршруты'),href:'#/routes'},{label:tr(d.name)}])}<div class="wrap content"><section class="section"><span class="eyebrow">${esc(d.latin)}</span><h1>${t('여행 일정: ','Маршруты: ')}${esc(tr(d.name))}</h1><p>${t('이 여행지의 일정을 따로 준비합니다.','Маршруты этого направления проработаем отдельно.')}</p><div class="notice">${t('실제 일정은 이동 시간, 접근 조건과 비용을 확인한 뒤 추가합니다.','Готовые планы добавим после проверки переездов, условий посещения и расходов.')}</div></section><section class="section">${sectionTitle(t(area?'휴양 지역 내 일정':'시내 일정',area?'Маршруты внутри курортного района':'Маршруты по городу'))}${empty(t('방문 장소와 실제 소요 시간을 확인한 뒤 동선을 정리합니다.','Выберем места и проверим время на посещение, затем составим последовательность поездки.'))}</section><section class="section">${sectionTitle(t('근교 여행','Поездки в окрестности'))}${empty(t('교통편, 이동 시간과 계절별 조건을 확인한 뒤 별도 일정을 만듭니다.','Отдельные маршруты составим после проверки транспорта, времени в дороге и сезонных условий.'))}</section><a class="button" href="${destinationURL(d.id)}">${t('여행지 가이드 보기','Открыть путеводитель направления')} →</a><p class="small muted">${t('여행지마다 콘텐츠를 따로 검토합니다.','Каждое направление наполняем и проверяем отдельно.')}</p>${sourceNote()}</div>`;
   }
-  return `${breadcrumb([{label:t('여행 일정','Маршруты')}])}<div class="wrap content"><section class="section"><h1>${t('여행 일정','Маршруты')}</h1><p>${t('여행지를 먼저 선택하세요. 각 지역의 일정을 따로 준비합니다.','Сначала выберите направление. Для каждого региона маршруты проработаем отдельно.')}</p><div class="practical-grid" id="route-directory">${routeCards()}</div></section></div>`;
+  return `${breadcrumb([{label:t('여행 일정','Маршруты')}])}<div class="wrap content"><section class="section"><h1>${t('여행 일정','Маршруты')}</h1><p>${t('여행지를 먼저 선택하세요. 각 지역의 일정을 따로 준비합니다.','Сначала выберите направление. Для каждого региона маршруты проработаем отдельно.')}</p>${routeMapMarkup(lang,destinations,picture)}<div class="practical-grid" id="route-directory">${routeCards()}</div></section></div>`;
 }
 function savedPage() {
   const chosen=destinations.filter(d=>saved.has(d.id));
@@ -141,6 +142,7 @@ function render({focus=false}={}) {
   document.getElementById('dialog-close').setAttribute('aria-label',t('닫기','Закрыть'));
   app.innerHTML=`${header()}<main id="content" class="reveal" tabindex="-1">${body}</main>${footer()}`;
   updateDirectory();
+  mountRouteMap(lang,destinations,picture);
   if(focus){document.getElementById('content').focus({preventScroll:true});window.scrollTo(0,0);}
 }
 function openVideo(key,title) {
