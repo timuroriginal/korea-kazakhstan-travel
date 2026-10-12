@@ -1,9 +1,9 @@
 export const text = (ko, ru) => ({ ko, ru });
 export const destinations = [
-  { id:'almaty', name:text('알마티','Алматы'), local:'Алматы', latin:'Almaty', eyebrow:text('도시와 산','Город и горы'), intro:text('도시 산책과 근교 자연을 함께 살펴보세요.','Городские прогулки и знакомство с природой окрестностей.'), tags:['nature','city','food'], places:[{id:'kok-tobe',name:text('콕토베','Кок-Тобе'),category:text('전망과 산책','Панорама и прогулка')}], nearby:text('차른 협곡 · 콜사이 호수 · 카인디 호수','Чарынский каньон · Кольсайские озёра · озеро Каинды') },
+  { id:'almaty', name:text('알마티','Алматы'), local:'Алматы', latin:'Almaty', eyebrow:text('도시와 산','Город и горы'), intro:text('도시 산책과 근교 자연을 함께 살펴보세요.','Городские прогулки и знакомство с природой окрестностей.'), tags:['nature','city','culture','food'], places:[{id:'kok-tobe',name:text('콕토베','Кок-Тобе'),category:text('전망과 산책','Панорама и прогулка')}], nearby:text('차른 협곡 · 콜사이 호수 · 카인디 호수','Чарынский каньон · Кольсайские озёра · озеро Каинды') },
   { id:'astana', name:text('아스타나','Астана'), local:'Астана', latin:'Astana', eyebrow:text('수도의 건축과 문화','Архитектура и культура столицы'), intro:text('건축, 문화 공간, 도시 산책을 중심으로 여행을 계획해 보세요.','Архитектура, культурные пространства и городские прогулки.'), tags:['city','culture','food'], places:[], nearby:text('근교 여행 정보를 준비하고 있습니다.','Подготовим варианты поездок в окрестности.') },
-  { id:'aktau', name:text('악타우','Актау'), local:'Актау', latin:'Aktau', eyebrow:text('카스피해와 망기스타우','Каспий и Мангистау'), intro:text('해안 도시와 주변 지역을 구분해 여행을 계획하세요.','Знакомство с побережьем и отдельные поездки по Мангистау.'), tags:['water','nature','city'], places:[], nearby:text('망기스타우 여행에는 별도의 교통·접근성 확인이 필요합니다.','Для поездок по Мангистау отдельно проверим транспорт и доступность.') },
-  { id:'ust-kamenogorsk', name:text('우스티카메노고르스크','Усть-Каменогорск'), local:'Өскемен / Усть-Каменогорск', latin:'Oskemen / Ust-Kamenogorsk', eyebrow:text('동카자흐스탄','Восточный Казахстан'), intro:text('도시와 동카자흐스탄의 자연 여행을 살펴보세요.','Город и отправная точка для знакомства с Восточным Казахстаном.'), tags:['nature','city'], places:[], nearby:text('알타이 방면 여행은 거리, 교통, 허가 조건을 먼저 확인합니다.','Для поездок в сторону Алтая сначала проверим расстояния, транспорт и разрешения.') },
+  { id:'aktau', name:text('악타우','Актау'), local:'Актау', latin:'Aktau', eyebrow:text('카스피해와 망기스타우','Каспий и Мангистау'), intro:text('해안 도시와 주변 지역을 구분해 여행을 계획하세요.','Знакомство с побережьем и отдельные поездки по Мангистау.'), tags:['water','food'], places:[], nearby:text('망기스타우 여행에는 별도의 교통·접근성 확인이 필요합니다.','Для поездок по Мангистау отдельно проверим транспорт и доступность.') },
+  { id:'ust-kamenogorsk', name:text('우스티카메노고르스크','Усть-Каменогорск'), local:'Өскемен / Усть-Каменогорск', latin:'Oskemen / Ust-Kamenogorsk', eyebrow:text('동카자흐스탄','Восточный Казахстан'), intro:text('도시와 동카자흐스탄의 자연 여행을 살펴보세요.','Город и отправная точка для знакомства с Восточным Казахстаном.'), tags:['nature'], places:[], nearby:text('알타이 방면 여행은 거리, 교통, 허가 조건을 먼저 확인합니다.','Для поездок в сторону Алтая сначала проверим расстояния, транспорт и разрешения.') },
   { id:'burabay', name:text('부라바이','Бурабай / Боровое'), local:'Бурабай / Боровое', latin:'Burabay / Borovoe', eyebrow:text('호수와 숲','Озёра и леса'), intro:text('도시가 아닌 휴양 지역입니다. 숙박 지역과 자연 명소를 함께 살펴보세요.','Курортный район: природные места, прогулки и выбор зоны проживания.'), tags:['nature','water'], places:[], nearby:text('호수와 자연 명소의 접근 조건을 확인한 뒤 추가합니다.','Добавим природные объекты после проверки условий доступа.') },
   { id:'turkistan', name:text('투르키스탄','Туркестан'), local:'Түркістан / Туркестан', latin:'Turkistan', eyebrow:text('역사와 문화유산','История и культурное наследие'), intro:text('문화유산과 도시 방문을 중심으로 여행을 계획하세요.','Знакомство с культурным наследием и городом.'), tags:['culture','city','food'], places:[], nearby:text('주변 유적과 이동 방법을 확인한 뒤 추가합니다.','Добавим исторические объекты поблизости после проверки логистики.') }
 ];
@@ -28,6 +28,11 @@ export const kokTobe = {
 // Photo: { kind:'photo', src:'assets/media/name.webp', alt:{ko:'...',ru:'...'}, credit:'...', source:'https://...' }
 // Video: { kind:'video', src:'assets/media/name.mp4', poster:'assets/media/name.webp', tracks:[{src:'assets/media/name.ko.vtt',srclang:'ko',label:'한국어'}], credit:'...', source:'https://...' }
 export const media = {
-  'country-hero':null, 'country-video':null, 'almaty':null, 'astana':null, 'aktau':null, 'ust-kamenogorsk':null, 'burabay':null, 'turkistan':null,
-  'almaty-video':null, 'kok-tobe-panorama':null, 'kok-tobe-ascent':null, 'kok-tobe-walk':null, 'kok-tobe-video':null, 'kok-tobe-guide':null
+  'country-hero':null, 'almaty':null, 'astana':null, 'aktau':null, 'ust-kamenogorsk':null, 'burabay':null, 'turkistan':null,
+  'almaty-video':null, 'astana-video':null, 'aktau-video':null, 'ust-kamenogorsk-video':null, 'burabay-video':null, 'turkistan-video':null, 'kok-tobe-panorama':null, 'kok-tobe-ascent':null, 'kok-tobe-walk':null, 'kok-tobe-video':null, 'kok-tobe-guide':null
+};
+
+// Editorial topics supplied by the owner; verify venues, availability and Korean names before publication.
+export const foodTopics = {
+  aktau:text('피시바르마크, 생선, 캐비아: 확인 후 음식 안내에 반영합니다.','Фишбармак, рыба и икра: темы для проверки и наполнения раздела еды.')
 };
