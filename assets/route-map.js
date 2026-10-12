@@ -50,14 +50,14 @@ export function routeMapMarkup(lang,destinations,picture,{home=false}={}){
 export function mountRouteMap(lang,destinations,picture){
   const root=document.querySelector('.route-explorer');if(!root)return;
   const t=(ko,ru)=>lang==='ko'?ko:ru;
-  let choosingOrigin=false,frame=0,lastPair='';
+  let choosingOrigin=false,frame=0,finishTimer,lastPair='';
   const motion=matchMedia('(prefers-reduced-motion: reduce)');
   const distance=root.querySelector('#flight-distance'),layer=root.querySelector('#flight-layer');
   const fmt=n=>Math.round(n).toLocaleString(lang==='ko'?'ko-KR':'ru-RU');
   const name=id=>destinations.find(d=>d.id===id).name[lang];
   function drawFlight(force=false){
     const key=`${origin}/${selected}`;if(key===lastPair&&!force)return;lastPair=key;
-    cancelAnimationFrame(frame);frame=0;layer.innerHTML='';
+    cancelAnimationFrame(frame);clearTimeout(finishTimer);frame=0;layer.innerHTML='';
     root.querySelector('#flight-origin').value=origin;
     root.querySelector('#flight-destination').textContent=name(selected);
     root.querySelectorAll('.map-marker').forEach(mark=>mark.classList.toggle('is-origin',mark.dataset.mapTarget===origin));
@@ -83,6 +83,8 @@ export function mountRouteMap(lang,destinations,picture){
     paint(0);const start=performance.now();
     function tick(now){if(!root.isConnected)return;const progress=Math.min(1,(now-start)/1100);paint(progress);if(progress<1)frame=requestAnimationFrame(tick);else frame=0;}
     frame=requestAnimationFrame(tick);
+    // Background tabs can suspend animation frames; the calculated result must still settle.
+    finishTimer=setTimeout(()=>{if(root.isConnected){cancelAnimationFrame(frame);frame=0;paint(1);}},1200);
   }
   function setOriginMode(value){
     choosingOrigin=value;root.classList.toggle('choosing-origin',value);
@@ -120,5 +122,5 @@ export function mountRouteMap(lang,destinations,picture){
   root.addEventListener('keydown',event=>{if(event.key==='Escape')setOriginMode(false);});
   const onMotion=()=>drawFlight(true);motion.addEventListener('change',onMotion);
   choose(selected);
-  return ()=>{cancelAnimationFrame(frame);motion.removeEventListener('change',onMotion);};
+  return ()=>{cancelAnimationFrame(frame);clearTimeout(finishTimer);motion.removeEventListener('change',onMotion);};
 }
