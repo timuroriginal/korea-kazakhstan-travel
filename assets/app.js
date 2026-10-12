@@ -1,0 +1,167 @@
+import { destinations, interests, practical, kokTobe, media } from './catalog.js';
+
+const app = document.getElementById('app');
+const dialog = document.getElementById('media-dialog');
+const storageKey = 'kazakhstan-guide-v1';
+let stored = {};
+try { stored = JSON.parse(localStorage.getItem(storageKey) || '{}') || {}; } catch { /* Storage is optional. */ }
+let lang = stored.lang === 'ru' ? 'ru' : 'ko';
+let saved = new Set(Array.isArray(stored.saved) ? stored.saved.filter(id => id === 'kok-tobe' || destinations.some(d => d.id === id)) : []);
+let filter = 'all';
+let query = '';
+let galleryIndex = 0;
+let transportTab = 'cable';
+let currentRoute = '';
+let toastTimer;
+
+const t = (ko, ru) => lang === 'ko' ? ko : ru;
+const tr = value => typeof value === 'string' ? value : value?.[lang] || '';
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeSrc = value => /^(assets\/|https:\/\/)/.test(value || '') ? esc(value) : '';
+const destinationURL = id => `#/destinations/${id}`;
+const placeURL = id => `#/places/${id}`;
+const route = () => location.hash.replace(/^#\/?/, '').split('?')[0].replace(/\/+$/, '') || 'home';
+
+function persist() {
+  try { localStorage.setItem(storageKey, JSON.stringify({ lang, saved: [...saved] })); return true; } catch { return false; }
+}
+function notify(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message; toast.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 5000);
+}
+function credit(item) {
+  if (!item?.credit) return '';
+  const source = /^https:\/\//.test(item.source || '') ? `<a href="${esc(item.source)}" target="_blank" rel="noopener noreferrer">${esc(t('출처','Источник'))}</a>` : '';
+  return `<div class="media-credit">${esc(item.credit)} ${source}</div>`;
+}
+function picture(key, label, extraClass = '') {
+  const item = media[key];
+  if (item?.kind === 'photo' && safeSrc(item.src)) return `<div class="media-slot has-image ${extraClass}"><img src="${safeSrc(item.src)}" alt="${esc(tr(item.alt) || label)}" loading="lazy" decoding="async"></div>${credit(item)}`;
+  return `<div class="media-slot ${extraClass}"><span class="media-badge">${t('사진 준비 중','ФОТОЗАГЛУШКА')}</span><span class="placeholder-icon" aria-hidden="true">▧</span><span class="media-label">${esc(label)}</span><span class="small">${t('실제 사진이 추가될 자리입니다.','Здесь появится реальная фотография.')}</span></div>`;
+}
+function videoCard(key, title, subtitle) {
+  const item = media[key];
+  const poster = safeSrc(item?.poster) ? `<img src="${safeSrc(item.poster)}" alt="" loading="lazy">` : '';
+  return `<button class="video-card" data-video="${key}" data-title="${esc(title)}"><div class="video-poster">${poster}<span class="video-placeholder-tag">${item?.src ? t('영상','ВИДЕО') : t('영상 준비 중','ВИДЕОЗАГЛУШКА')}</span><span class="play-circle" aria-hidden="true">▶</span><span class="video-label">${esc(t('선택하여 보기','Нажмите для просмотра'))}</span></div><h3>${esc(title)}</h3><p>${esc(subtitle)}</p></button>`;
+}
+function sectionTitle(title, caption = '') { return `<div class="section-title"><h2>${esc(title)}</h2>${caption ? `<span class="muted">${esc(caption)}</span>` : ''}</div>`; }
+function empty(message) { return `<div class="empty-block"><p>${esc(message)}</p></div>`; }
+function sourceNote() { return `<div class="source-note">${t('편집 초안 · 실용 정보는 아직 확인되지 않았습니다. 게시 전 공식 출처와 확인 날짜를 추가합니다.','Редакционный черновик · Практические сведения ещё не проверены. Перед публикацией добавим официальные источники и дату проверки.')}</div>`; }
+function breadcrumb(items) { return `<nav class="breadcrumbs wrap" aria-label="${t('현재 위치','Путь страницы')}"><ol><li><a href="#/">${t('카자흐스탄','Казахстан')}</a></li>${items.map(item => `<li>${item.href ? `<a href="${item.href}">${esc(item.label)}</a>` : esc(item.label)}</li>`).join('')}</ol></nav>`; }
+function saveButton(id) { return `<button class="button" data-save="${id}" aria-pressed="${saved.has(id)}">${saved.has(id) ? '♥' : '♡'} ${saved.has(id) ? t('저장됨','Сохранено') : t('저장하기','Сохранить')}</button>`; }
+function navLink(url, ko, ru) {
+  const part = url.replace(/^#\/?/, '') || 'home';
+  const active = currentRoute === part || (part !== 'home' && currentRoute.startsWith(`${part}/`));
+  return `<a href="${url}"${active ? ' aria-current="page"' : ''}>${esc(t(ko, ru))}</a>`;
+}
+function navigation() { return [navLink('#/destinations','여행지','Направления'),navLink('#/interests','테마 여행','Интересы'),navLink('#/prepare','여행 준비','Подготовка'),navLink('#/routes','여행 일정','Маршруты'),navLink('#/saved','저장한 장소','Сохранённое')].join(''); }
+function header() {
+  return `<div class="draft-bar"><div class="wrap"><span>${t('미리보기 · 콘텐츠와 한국어 표현을 검토하고 있습니다.','Предварительная версия · Контент и корейские тексты требуют редакторской проверки.')}</span><span>${t('사진·영상 준비 중','Фото и видео пока заглушки')}</span></div></div><header class="site-header"><div class="wrap header-inner"><a class="brand" href="#/">KAZAKHSTAN <span>GUIDE</span><small>${t('한국어 여행 가이드','Гид для корейских туристов')}</small></a><nav class="desktop-nav" aria-label="${t('주 메뉴','Главное меню')}">${navigation()}</nav><div class="header-actions"><button class="lang-button" data-language="${lang === 'ko' ? 'ru' : 'ko'}" aria-label="${t('러시아어로 전환','Переключить на корейский')}">${lang === 'ko' ? 'RU' : '한국어'}</button><button class="menu-button" id="menu-button" aria-expanded="false" aria-controls="mobile-nav">☰ <span>${t('메뉴','Меню')}</span></button></div></div><nav id="mobile-nav" class="mobile-nav" aria-label="${t('모바일 메뉴','Мобильное меню')}" hidden>${navigation()}</nav></header>`;
+}
+function footer() { return `<footer><div class="wrap footer-inner"><div><strong>KAZAKHSTAN GUIDE</strong><p>${t('카자흐스탄을 여행하는 한국인을 위한 가이드. 현재는 구조와 디자인 검토용 미리보기입니다.','Путеводитель по Казахстану для корейских туристов. Сейчас это предварительная версия для проверки структуры и дизайна.')}</p></div><nav class="footer-links" aria-label="${t('하단 메뉴','Нижнее меню')}"><a href="#/destinations">${t('여행지','Направления')}</a><a href="#/prepare">${t('여행 준비','Подготовка')}</a><a href="#/about">${t('가이드 소개','О путеводителе')}</a></nav></div></footer>`; }
+function destinationCard(d) { return `<a class="destination-card" href="${destinationURL(d.id)}">${picture(d.id,tr(d.name))}<h3>${esc(tr(d.name))}</h3><span class="local-name">${esc(lang === 'ko' ? d.local : d.latin)}</span><p>${esc(tr(d.eyebrow))}</p><span class="card-link">${t('여행 가이드 보기','Открыть путеводитель')} →</span></a>`; }
+function practicalCards() { return practical.map(p => `<a class="practical-card" href="#/prepare/${p.id}"><h3>${esc(tr(p.name))}</h3><p>${esc(tr(p.summary))}</p><span class="card-link">${t('안내 보기','Открыть раздел')} →</span></a>`).join(''); }
+function filterControls() { return `<div class="filter-row" aria-label="${t('관심사 필터','Фильтр по интересам')}">${interests.map(i=>`<button class="chip" data-filter="${i.id}" aria-pressed="${filter === i.id}">${esc(tr(i.name))}</button>`).join('')}</div><div class="search-line"><label>${t('여행지 검색','Поиск направления')}<input id="destination-search" type="search" value="${esc(query)}" placeholder="${t('도시 이름 또는 현지 이름','Название города или местное название')}" autocomplete="off"></label><p class="search-count" id="search-count" aria-live="polite"></p></div>`; }
+function home() {
+  return `<section class="hero"><div class="wrap hero-inner"><div class="hero-text"><span class="eyebrow">KAZAKHSTAN / 카자흐스탄</span><h1>${t('카자흐스탄을 만나다','Откройте Казахстан')}</h1><p>${t('도시와 자연을 발견하고 여행을 준비하세요. 가고 싶은 곳부터 실용적인 방문 정보까지.','Выберите направление и подготовьте поездку — от знакомства с местами до практических деталей.')}</p><a class="button" href="#/destinations">${t('여행지 둘러보기','Выбрать направление')} →</a></div>${picture('country-hero',t('카자흐스탄의 풍경','Панорамное фото Казахстана'))}</div></section><div class="wrap content"><section class="section" id="destinations">${sectionTitle(t('어디로 떠날까요?','Куда поехать'),t('여섯 개의 여행지','Шесть направлений'))}${filterControls()}<div class="dest-grid" id="dest-grid"></div></section><section class="section">${sectionTitle(t('출발 전 준비','Перед поездкой'))}<div class="practical-grid">${practicalCards()}</div></section><section class="section">${sectionTitle(t('여행 일정','Маршруты'))}<div class="route-card"><div><h3>${t('알마티와 근교','Алматы и окрестности')}</h3><p>${t('이동 시간과 교통편을 확인한 뒤 일정을 추가합니다.','Планы по дням появятся после проверки времени переездов и транспорта.')}</p></div><a class="button" href="#/routes">${t('일정 안내','Посмотреть раздел')} →</a></div></section><section class="section">${sectionTitle(t('영상으로 만나는 카자흐스탄','Казахстан в движении'))}<div class="video-grid">${videoCard('country-video',t('카자흐스탄의 분위기','Почувствуйте путешествие'),t('나라 소개 영상이 추가됩니다.','Здесь появится обзорный ролик.'))}${videoCard('almaty-video',t('알마티: 도시와 산','Алматы: город и горы'),t('여행지 소개 영상이 추가됩니다.','Здесь появится видео о направлении.'))}</div></section></div>`;
+}
+function directory(kind) {
+  return `${breadcrumb([{label:t(kind==='interests'?'테마 여행':'여행지',kind==='interests'?'Интересы':'Направления')}])}<div class="wrap content"><section class="section"><h1>${t(kind==='interests'?'관심사로 여행 찾기':'여행지',kind==='interests'?'Выберите свой интерес':'Направления')}</h1><p class="muted">${t('도시와 휴양 지역을 선택해 자세히 살펴보세요.','Выберите город или курортный район и откройте его путеводитель.')}</p>${filterControls()}<div class="dest-grid" id="dest-grid"></div></section></div>`;
+}
+function overviewFacts() { return `<div class="fact-grid"><div><strong>${t('언제 갈까요?','Когда ехать')}</strong><span>${t('계절별 안내 준비 중','Подготовим сведения по сезонам')}</span></div><div><strong>${t('얼마나 머물까요?','Сколько времени')}</strong><span>${t('일정 확인 후 안내','После проверки маршрутов')}</span></div><div><strong>${t('어떤 여행인가요?','Тип поездки')}</strong><span>${t('관심사와 이동 방식','Интересы и способы перемещения')}</span></div></div>`; }
+function destinationSidebar(d) { return `<aside class="sidebar"><div class="sidebar-panel"><h3>${t('여행 실용 정보','Практическая информация')}</h3><span class="label">${t('검색용 현지 이름','Местное название для поиска')}</span><strong>${esc(d.local)}</strong><button class="button" data-copy="${esc(d.local)}">${t('이름 복사','Копировать название')}</button><div class="map-placeholder"><span aria-hidden="true">⌖</span><strong>${t('지도 준비 중','Место для карты')}</strong><small>${t('정확한 위치 확인 후 추가','Добавим после проверки точек')}</small></div><ul><li>${t('교통과 도착','Прибытие и транспорт')}</li><li>${t('현지 주소와 표현','Местные адреса и фразы')}</li><li>${t('공식 출처와 확인 날짜','Источники и дата проверки')}</li></ul></div><div class="sidebar-panel"><h3>${t('여행 준비','Подготовка к поездке')}</h3><p>${t('입국, 결제, 인터넷 등 기본 정보를 확인하세요.','Въезд, оплата, интернет и другие основные вопросы.')}</p><a class="button" href="#/prepare">${t('준비 항목 보기','Открыть раздел')}</a></div></aside>`; }
+function localNav(items) { return `<nav class="local-nav" aria-label="${t('페이지 목차','Разделы страницы')}"><div class="wrap">${items.map(([id,label])=>`<a href="#${id}" data-scroll="${id}">${esc(label)}</a>`).join('')}</div></nav>`; }
+function destinationPage(d) {
+  const items=[['overview',t('소개','Обзор')],['places',t('명소','Что посмотреть')],['nearby',t('근교','Окрестности')],['transport',t('교통','Транспорт')],['stay',t('숙박과 음식','Проживание и еда')],['itinerary',t('일정','Маршруты')],['videos',t('영상','Видео')]];
+  const places=d.places.length ? `<div class="place-grid">${d.places.map(p=>`<a class="place-card" href="${placeURL(p.id)}">${picture('kok-tobe-panorama',tr(p.name))}<h3>${esc(tr(p.name))}</h3><p>${esc(tr(p.category))}</p><span class="card-link">${t('방문 안내','Открыть страницу места')} →</span></a>`).join('')}</div>` : empty(t('명소 목록과 개별 방문 안내를 준비하고 있습니다.','Подготовим список мест и отдельные инструкции по посещению.'));
+  return `${breadcrumb([{label:tr(d.name)}])}<section class="hero"><div class="wrap hero-inner"><div class="hero-text"><span class="eyebrow">${esc(d.latin)}</span><h1>${esc(tr(d.name))}</h1><p>${esc(tr(d.intro))}</p>${saveButton(d.id)}</div>${picture(d.id,tr(d.name))}</div></section>${localNav(items)}<div class="wrap content columns"><div><section class="section" id="overview">${sectionTitle(t('소개','Обзор'))}<p>${esc(tr(d.intro))}</p>${overviewFacts()}</section><section class="section" id="places">${sectionTitle(t('주요 명소','Что посмотреть'),t('편집 초안','Редакционный черновик'))}${places}</section><section class="section" id="nearby">${sectionTitle(t('근교 여행','За пределами города'))}<p>${esc(tr(d.nearby))}</p><div class="notice">${t('이동 시간, 교통, 계절별 접근 조건은 별도로 확인한 뒤 안내합니다.','Время в дороге, транспорт и сезонные условия доступа будут проверены отдельно.')}</div></section><section class="section" id="transport">${sectionTitle(t('교통','Как добраться и перемещаться'))}<div class="practical-grid"><div><h3>${t('도착','Прибытие')}</h3><p>${t('공항·역에서 목적지까지의 이동 안내 준비 중','Подготовим путь из аэропорта или вокзала')}</p></div><div><h3>${t(d.id==='burabay'?'지역 내 이동':'시내 이동',d.id==='burabay'?'Внутри района':'В городе')}</h3><p>${t('교통 수단 비교 준비 중','Подготовим сравнение транспорта')}</p></div><div><h3>${t('근교 이동','За городом')}</h3><p>${t('거리와 접근 조건 확인 예정','Проверим расстояния и доступ')}</p></div></div></section><section class="section" id="stay">${sectionTitle(t('숙박과 음식','Где жить и что попробовать'))}${empty(t(d.id==='burabay'?'숙박 지역과 자연 명소의 위치를 비교할 예정입니다.':'숙박 지역 비교, 현지 음식, 주문 표현을 준비하고 있습니다.',d.id==='burabay'?'Подготовим сравнение зон проживания и расположения природных мест.':'Подготовим сравнение районов, местную кухню и фразы для заказа.'))}</section><section class="section" id="itinerary">${sectionTitle(t('여행 일정','Маршруты'))}${empty(t('일별 동선은 이동 시간을 확인한 뒤 추가합니다.','Планы по дням добавим после проверки времени переездов.'))}<p><a href="#/routes">${t('전체 일정 안내','Раздел маршрутов')} →</a></p></section><section class="section" id="videos">${sectionTitle(t('여행지 영상','Видео о направлении'))}${videoCard(d.id==='almaty'?'almaty-video':d.id+'-video',tr(d.name),t('한국어 자막과 함께 영상이 추가됩니다.','Здесь появится ролик с корейскими субтитрами.'))}</section>${sourceNote()}</div>${destinationSidebar(d)}</div>`;
+}
+function placeSidebar() { return `<aside class="sidebar"><div class="sidebar-panel"><h3>${t('방문 계획','План посещения')}</h3><span class="label">${t('검색용 이름','Название для поиска')}</span><strong>${esc(kokTobe.local)}</strong><button class="button" data-copy="${esc(kokTobe.local)}">${t('이름 복사','Копировать название')}</button><div class="map-placeholder"><strong>${t('지도 준비 중','Место для карты')}</strong><small>${t('입구와 하부 정류장을 확인한 뒤 추가합니다.','Добавим вход и нижнюю станцию после проверки.')}</small></div><span class="label">${t('주소','Адрес')}</span><p>${t('정확한 주소 확인 후 추가','Добавим после проверки точного адреса')}</p><span class="label">${t('기사에게 보여줄 표현','Фраза для водителя')}</span><p lang="ru">До нижней станции канатной дороги Кок-Тобе, пожалуйста.</p><small>${t('현지 안내 문구 검토 중','Формулировка требует проверки')}</small></div><div class="sidebar-panel"><h3>${t('알마티 여행','Поездка в Алматы')}</h3><a class="button" href="${destinationURL('almaty')}">${t('도시 가이드로 돌아가기','Вернуться к путеводителю')}</a></div></aside>`; }
+function gallery() {
+  const g=kokTobe.gallery[galleryIndex];
+  const main=g.kind==='video' ? videoCard(g.key,tr(g.label),t('영상이 추가될 자리입니다.','Здесь появится видео.')) : picture(g.key,tr(g.label));
+  return `<div class="gallery"><div id="gallery-stage" aria-live="polite">${main}</div><div class="gallery-thumbs" aria-label="${t('갤러리 선택','Выбор фото и видео')}">${kokTobe.gallery.map((g,i)=>`<button class="gallery-thumb" data-gallery="${i}" aria-pressed="${i===galleryIndex}">${g.kind==='video'?'▶ ':''}${esc(tr(g.label))}</button>`).join('')}</div></div>`;
+}
+function transportPanels() { return `<div class="tablist" role="tablist" aria-label="${t('이동 방법','Способ добраться')}"><button class="tab" role="tab" id="tab-cable" aria-controls="panel-cable" aria-selected="${transportTab==='cable'}" tabindex="${transportTab==='cable'?'0':'-1'}" data-tab="cable">${t('케이블카','Канатная дорога')}</button><button class="tab" role="tab" id="tab-ground" aria-controls="panel-ground" aria-selected="${transportTab==='ground'}" tabindex="${transportTab==='ground'?'0':'-1'}" data-tab="ground">${t('지상 교통','Наземный путь')}</button></div><div role="tabpanel" id="panel-cable" aria-labelledby="tab-cable"${transportTab==='cable'?'':' hidden'}><ol class="steps"><li><strong>${t('하부 정류장 찾기','Найдите нижнюю станцию')}</strong><span>${t('정확한 위치와 기사에게 보여줄 이름을 확인할 예정입니다.','Проверим точку на карте и название для водителя.')}</span></li><li><strong>${t('운행 여부 확인','Проверьте работу подъёмника')}</strong><span>${t('공식 시간표와 날씨에 따른 제한을 확인합니다.','Добавим официальный источник расписания и погодные ограничения.')}</span></li><li><strong>${t('입장권과 돌아오는 방법','Билеты и возвращение')}</strong><span>${t('요금, 결제, 귀환 조건 확인 후 안내합니다.','Проверим тарифы, оплату и условия возвращения.')}</span></li></ol></div><div role="tabpanel" id="panel-ground" aria-labelledby="tab-ground"${transportTab==='ground'?'':' hidden'}>${empty(t('지상 경로는 아직 확인되지 않았습니다. 도착 지점, 교통 수단, 진입 조건을 확인한 뒤 안내합니다.','Наземный вариант ещё не проверен. Уточним точку прибытия, транспорт и ограничения въезда.'))}</div>`; }
+function placePage() {
+  const items=[['overview',t('소개','Обзор')],['sights',t('볼거리','Что увидеть')],['transport',t('교통','Как добраться')],['practical',t('방문 전 확인','Перед посещением')],['videos',t('영상','Видео')]];
+  return `${breadcrumb([{label:tr(destinations[0].name),href:destinationURL('almaty')},{label:tr(kokTobe.name)}])}<div class="wrap"><div class="page-heading"><div><span class="eyebrow">ALMATY / ${t('전망과 산책','Панорама и прогулка')}</span><h1>${esc(tr(kokTobe.name))}</h1><p>${esc(tr(kokTobe.intro))}</p></div>${saveButton('kok-tobe')}</div>${gallery()}</div>${localNav(items)}<div class="wrap content columns"><div><section class="section" id="overview">${sectionTitle(t('어떤 곳인가요?','Что это за место'))}<p>${t('전망과 산책을 위한 방문을 계획하는 페이지입니다. 상세한 방문 정보는 검토 중입니다.','Страница поможет выбрать способ посещения и подготовиться к прогулке. Подробные сведения пока проверяются.')}</p><div class="fact-grid"><div><strong>${t('볼거리','Что увидеть')}</strong><span>${t('전망과 산책','Панорама и прогулка')}</span></div><div><strong>${t('관심사','Интересы')}</strong><span>${t('풍경과 사진','Виды и фотографии')}</span></div><div><strong>${t('확인 사항','Что учесть')}</strong><span>${t('날씨와 시야','Погода и видимость')}</span></div></div></section><section class="section" id="sights">${sectionTitle(t('볼거리','Что посмотреть'))}<div class="story-row">${picture('kok-tobe-panorama',t('전망 사진','Фото видовой площадки'))}<div><h3>${t('도시 전망','Виды на город')}</h3><p>${t('전망 지점과 촬영 안내를 확인한 뒤 추가합니다.','Добавим видовые точки и подсказки для фотографий после проверки.')}</p></div></div><div class="story-row">${picture('kok-tobe-walk',t('산책 사진','Фото территории'))}<div><h3>${t('산책 동선','Прогулка по территории')}</h3><p>${t('현장 동선과 안내 표지를 확인할 예정입니다.','Проверим последовательность посещения и ориентиры на месте.')}</p></div></div></section><section class="section" id="transport">${sectionTitle(t('가는 방법','Как добраться'))}<div id="transport-content">${transportPanels()}</div></section><section class="section" id="practical">${sectionTitle(t('방문 전 확인','Перед посещением'))}<ul class="note-list">${kokTobe.facts.map(f=>`<li>${esc(tr(f))}</li>`).join('')}</ul></section><section class="section" id="videos">${sectionTitle(t('짧은 영상 가이드','Короткая видеоинструкция'))}${videoCard('kok-tobe-guide',t('정류장 찾기와 올라가는 방법','Как найти станцию и подняться'),t('실제 영상과 한국어 자막을 준비할 예정입니다.','Подготовим реальное видео с корейскими субтитрами.'))}</section><section class="section">${sectionTitle(t('함께 방문하기','Что посетить рядом'))}<div class="related-row"><a href="${destinationURL('almaty')}"><h3>${t('알마티 가이드','Путеводитель по Алматы')}</h3><span>${t('도시와 근교 알아보기','Город и окрестности')} →</span></a><a href="#/routes"><h3>${t('여행 일정','Маршруты')}</h3><span>${t('여행 계획 안내','Раздел планирования')} →</span></a></div></section>${sourceNote()}</div>${placeSidebar()}</div>`;
+}
+function preparePage(id) {
+  if(id){const p=practical.find(p=>p.id===id);if(!p)return notFound();return `${breadcrumb([{label:t('여행 준비','Подготовка'),href:'#/prepare'},{label:tr(p.name)}])}<div class="wrap content"><section class="section"><h1>${esc(tr(p.name))}</h1><p>${esc(tr(p.summary))}</p><div class="notice">${t('이 안내는 아직 작성 중입니다. 검증되지 않은 정보를 여행 지침으로 사용하지 마세요.','Раздел ещё готовится. Здесь пока нет проверенной инструкции для поездки.')}</div><ul class="note-list">${p.fields.map(f=>`<li>${esc(tr(f))} — ${t('확인 후 추가','добавим после проверки')}</li>`).join('')}</ul></section>${sourceNote()}<p><a href="#/prepare">← ${t('모든 준비 항목','Все разделы подготовки')}</a></p></div>`;}
+  return `${breadcrumb([{label:t('여행 준비','Подготовка')}])}<div class="wrap content"><section class="section"><h1>${t('출발 전 준비','Подготовка к поездке')}</h1><p class="muted">${t('한국인 여행자에게 필요한 실용 정보를 정리할 공간입니다.','Здесь соберём практические сведения для корейских путешественников.')}</p><div class="practical-grid">${practicalCards()}</div></section>${sourceNote()}</div>`;
+}
+function routesPage() { return `${breadcrumb([{label:t('여행 일정','Маршруты')}])}<div class="wrap content"><section class="section"><h1>${t('여행 일정','Маршруты')}</h1><p>${t('여섯 여행지의 이동 시간과 방문 조건을 확인한 뒤 실제 가능한 일정을 준비합니다.','Для шести направлений подготовим реалистичные планы после проверки переездов и условий посещения.')}</p><div class="notice">${t('이동 시간과 비용을 확인하지 않은 일정은 아직 공개하지 않습니다.','Планы с непроверенными временем в дороге и расходами пока не публикуем.')}</div><div class="practical-grid">${destinations.map(d=>`<a class="practical-card" href="${destinationURL(d.id)}"><h3>${esc(tr(d.name))}</h3><p>${t('일정 준비 중 · 여행지 보기','Маршрут готовится · Открыть направление')} →</p></a>`).join('')}</div></section></div>`; }
+function savedPage() {
+  const chosen=destinations.filter(d=>saved.has(d.id));
+  return `${breadcrumb([{label:t('저장한 장소','Сохранённое')}])}<div class="wrap content"><section class="section"><h1>${t('저장한 장소','Сохранённые места')}</h1><p class="muted">${t('이 브라우저에만 저장됩니다.','Список хранится только в этом браузере.')}</p>${saved.size?`<div class="dest-grid">${chosen.map(destinationCard).join('')}${saved.has('kok-tobe')?`<a class="destination-card" href="${placeURL('kok-tobe')}">${picture('kok-tobe-panorama',tr(kokTobe.name))}<h3>${esc(tr(kokTobe.name))}</h3><p>${t('알마티의 장소','Место в Алматы')}</p></a>`:''}</div>`:empty(t('아직 저장한 장소가 없습니다. 여행지나 명소 페이지에서 하트 버튼을 선택하세요.','Пока ничего не сохранено. Нажмите сердечко на странице направления или места.'))}<p><a href="#/destinations">${t('여행지 둘러보기','Выбрать направление')} →</a></p></section></div>`;
+}
+function aboutPage() { return `${breadcrumb([{label:t('가이드 소개','О путеводителе')}])}<div class="wrap content"><section class="section"><h1>${t('가이드 소개','О путеводителе')}</h1><p>${t('한국어로 카자흐스탄 여행을 준비할 수 있도록 만드는 가이드입니다.','Путеводитель создаётся для подготовки поездок по Казахстану на корейском языке.')}</p><div class="notice">${t('현재 버전은 구조와 디자인을 검토하는 미리보기입니다. 사진, 영상, 지도, 실용 정보는 준비 중이며 한국어 교정도 필요합니다.','Текущая версия предназначена для проверки структуры и дизайна. Фото, видео, карта и практические сведения готовятся; корейские тексты требуют редактуры.')}</div><h2>${t('정보 확인 원칙','Как проверяем информацию')}</h2><ul><li>${t('가격·운영 시간·이동 방법은 출처와 날짜를 함께 표시합니다.','Цены, расписания и способы добраться будут сопровождаться источниками и датой проверки.')}</li><li>${t('사진과 영상의 출처와 사용 권한을 확인합니다.','Проверяем источники фото и видео и права на использование.')}</li><li>${t('생성형 영상은 실제 장소의 증거로 사용하지 않습니다.','Сгенерированное видео не используем как подтверждение реального вида места.')}</li></ul></section></div>`; }
+function notFound() { return `<div class="wrap content"><section class="section"><h1>${t('페이지를 찾을 수 없습니다.','Страница не найдена')}</h1><a class="button primary" href="#/">${t('첫 화면으로','На главную')}</a></section></div>`; }
+function updateDirectory() {
+  const grid=document.getElementById('dest-grid');if(!grid)return;
+  const normalized=query.trim().toLocaleLowerCase();
+  const filtered=destinations.filter(d=>(filter==='all'||d.tags.includes(filter))&&[d.name.ko,d.name.ru,d.local,d.latin,d.eyebrow.ko,d.eyebrow.ru].join(' ').toLocaleLowerCase().includes(normalized));
+  grid.innerHTML=filtered.length?filtered.map(destinationCard).join(''):empty(t('검색 결과가 없습니다. 검색어나 관심사를 바꿔보세요.','Ничего не найдено. Измените запрос или выбранный интерес.'));
+  document.getElementById('search-count').textContent=t(`여행지 ${filtered.length}개`,`Найдено направлений: ${filtered.length}`);
+  document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.filter===filter)));
+}
+function render({focus=false}={}) {
+  currentRoute=route();
+  const parts=currentRoute.split('/');
+  let body;
+  let title=t('카자흐스탄 여행','Путеводитель по Казахстану');
+  if(currentRoute==='home')body=home();
+  else if(currentRoute==='destinations'||currentRoute==='interests')body=directory(currentRoute);
+  else if(parts[0]==='destinations'&&parts.length===2){const d=destinations.find(x=>x.id===parts[1]);body=d?destinationPage(d):notFound();if(d)title=tr(d.name);}
+  else if(currentRoute==='places/kok-tobe'){body=placePage();title=tr(kokTobe.name);}
+  else if(parts[0]==='prepare'&&parts.length<=2)body=preparePage(parts[1]);
+  else if(currentRoute==='routes')body=routesPage();
+  else if(currentRoute==='saved')body=savedPage();
+  else if(currentRoute==='about')body=aboutPage();
+  else body=notFound();
+  document.documentElement.lang=lang;
+  document.title=`${title} — Kazakhstan Guide`;
+  document.getElementById('skip-link').textContent=t('본문으로 이동','Перейти к содержимому');
+  document.getElementById('dialog-close').setAttribute('aria-label',t('닫기','Закрыть'));
+  app.innerHTML=`${header()}<main id="content" class="reveal" tabindex="-1">${body}</main>${footer()}`;
+  updateDirectory();
+  if(focus){document.getElementById('content').focus({preventScroll:true});window.scrollTo(0,0);}
+}
+function openVideo(key,title) {
+  const item=media[key];
+  document.getElementById('media-dialog-title').textContent=title;
+  const tracks=(item?.tracks||[]).filter(track=>safeSrc(track.src)).map(track=>`<track kind="subtitles" src="${safeSrc(track.src)}" srclang="${esc(track.srclang)}" label="${esc(track.label)}"${track.srclang==='ko'?' default':''}>`).join('');
+  document.getElementById('media-dialog-content').innerHTML=item?.kind==='video'&&safeSrc(item.src)?`<video controls playsinline preload="metadata"${safeSrc(item.poster)?` poster="${safeSrc(item.poster)}"`:''}><source src="${safeSrc(item.src)}">${tracks}${t('이 브라우저는 영상을 지원하지 않습니다.','Ваш браузер не поддерживает видео.')}</video>${credit(item)}`:empty(t('영상은 아직 준비 중입니다. 실제 영상, 한국어 자막, 재생 컨트롤이 추가될 자리입니다.','Видео пока не загружено. Здесь появится реальный ролик, корейские субтитры и управление воспроизведением.'));
+  dialog.showModal();
+}
+function setTransportTab(tab, focus=false) {
+  transportTab=tab;
+  document.getElementById('transport-content').innerHTML=transportPanels();
+  if(focus)document.getElementById(`tab-${tab}`).focus();
+}
+app.addEventListener('click',async event=>{
+  const control=event.target.closest('button,a');if(!control)return;
+  if(control.closest('#mobile-nav') && control.matches('a')){
+    document.getElementById('mobile-nav').hidden=true;
+    document.getElementById('menu-button').setAttribute('aria-expanded','false');
+  }
+  if(control.dataset.scroll){event.preventDefault();document.getElementById(control.dataset.scroll)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+  if(control.dataset.language){const y=window.scrollY;lang=control.dataset.language;persist();render();window.scrollTo(0,y);}
+  if(control.id==='menu-button'){const expanded=control.getAttribute('aria-expanded')==='true';control.setAttribute('aria-expanded',String(!expanded));document.getElementById('mobile-nav').hidden=expanded;}
+  if(control.dataset.filter){filter=control.dataset.filter;updateDirectory();}
+  if(control.dataset.save){const id=control.dataset.save;saved.has(id)?saved.delete(id):saved.add(id);const persisted=persist();control.setAttribute('aria-pressed',String(saved.has(id)));control.textContent=`${saved.has(id)?'♥':'♡'} ${saved.has(id)?t('저장됨','Сохранено'):t('저장하기','Сохранить')}`;notify(persisted?t('이 브라우저의 목록을 업데이트했습니다.','Список в этом браузере обновлён.'):t('브라우저 저장을 사용할 수 없어 현재 세션에만 저장됩니다.','Хранилище браузера недоступно. Список сохранится только в текущем сеансе.'));}
+  if(control.dataset.copy){try{await navigator.clipboard.writeText(control.dataset.copy);notify(t('복사했습니다: ','Скопировано: ')+control.dataset.copy);}catch{notify(t('직접 복사하세요: ','Для копирования: ')+control.dataset.copy);}}
+  if(control.dataset.gallery){galleryIndex=Number(control.dataset.gallery);const g=kokTobe.gallery[galleryIndex];document.getElementById('gallery-stage').innerHTML=g.kind==='video'?videoCard(g.key,tr(g.label),t('영상 준비 중','Видео готовится')):picture(g.key,tr(g.label));document.querySelectorAll('[data-gallery]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.gallery)===galleryIndex)));}
+  if(control.dataset.tab)setTransportTab(control.dataset.tab,true);
+  if(control.dataset.video)openVideo(control.dataset.video,control.dataset.title);
+});
+app.addEventListener('input',event=>{if(event.target.id==='destination-search'){query=event.target.value;updateDirectory();}});
+app.addEventListener('keydown',event=>{if(!event.target.matches('[data-tab]'))return;if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const tab=event.key==='Home'?'cable':event.key==='End'?'ground':transportTab==='cable'?'ground':'cable';setTransportTab(tab,true);}});
+document.getElementById('dialog-close').addEventListener('click',()=>dialog.close());
+dialog.addEventListener('click',event=>{if(event.target===dialog){const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)dialog.close();}});
+dialog.addEventListener('close',()=>{dialog.querySelector('video')?.pause();document.getElementById('media-dialog-content').innerHTML='';});
+document.getElementById('skip-link').addEventListener('click',event=>{event.preventDefault();document.getElementById('content').focus();});
+window.addEventListener('hashchange',()=>{if(dialog.open)dialog.close();clearTimeout(toastTimer);document.getElementById('toast').hidden=true;galleryIndex=0;transportTab='cable';render({focus:true});});
+render();
