@@ -14,6 +14,7 @@ let galleryIndex = 0;
 let transportTab = 'cable';
 let currentRoute = '';
 let toastTimer;
+let mapCleanup=()=>{};
 
 const t = (ko, ru) => lang === 'ko' ? ko : ru;
 const tr = value => typeof value === 'string' ? value : value?.[lang] || '';
@@ -140,9 +141,10 @@ function render({focus=false}={}) {
   document.title=`${title} — Kazakhstan Guide`;
   document.getElementById('skip-link').textContent=t('본문으로 이동','Перейти к содержимому');
   document.getElementById('dialog-close').setAttribute('aria-label',t('닫기','Закрыть'));
+  mapCleanup();
   app.innerHTML=`${header()}<main id="content" class="reveal" tabindex="-1">${body}</main>${footer()}`;
   updateDirectory();
-  mountRouteMap(lang,destinations,picture);
+  mapCleanup=mountRouteMap(lang,destinations,picture)||(()=>{});
   if(focus){document.getElementById('content').focus({preventScroll:true});window.scrollTo(0,0);}
 }
 function openVideo(key,title) {
