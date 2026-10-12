@@ -31,3 +31,22 @@ footer{border-top:1px solid var(--line);background:white;padding:28px 0;color:va
 @media(max-width:850px){.map-home .map-layout{grid-template-columns:1fr}.map-home #route-map-card .media-slot{min-height:170px}}
 @media(max-width:520px){.map-home #route-map-card .media-slot{min-height:145px}}
 @media(prefers-reduced-motion:reduce){#route-map-card>.media-slot,#route-map-card>.map-card-content{animation:none}.map-marker.is-selected .marker-halo{filter:none}}
+
+/* Airport distance explorer: controls remain usable without hover or motion. */
+.flight-controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap;background:white;border:1px solid var(--line);padding:16px;margin-bottom:8px;border-radius:6px}
+.flight-controls label,.flight-arrival,.flight-distance{display:grid;gap:6px;font-size:12px;color:var(--muted)}
+.flight-controls label{min-width:170px;flex:1}
+.flight-controls select{width:100%;max-width:100%;min-height:44px;border:1px solid var(--line);border-radius:4px;background:var(--soft);padding:8px;color:var(--ink);font:inherit;font-size:14px}
+.flight-controls .button{font-size:12px;min-height:44px}
+.flight-arrival{min-width:140px;flex:1}.flight-arrival strong{color:var(--ink);font-size:16px;min-height:44px;display:flex;align-items:center}
+.flight-distance{min-width:120px}.flight-distance output{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;min-height:44px;color:#8c6009;display:flex;align-items:center}
+.flight-hint{font-size:12px;color:var(--muted);min-height:36px;margin:0 0 16px}
+.flight-track{fill:none;stroke:#b9841280;stroke-width:1.5;stroke-dasharray:4 6}
+.flight-trail{fill:none;stroke:#d5a317;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 3px #ffe08b)}
+.flight-plane path{fill:white;stroke:#916106;stroke-width:2;stroke-linejoin:round;filter:drop-shadow(0 2px 2px #a5761755)}
+.flight-endpoint{fill:#d5a317;stroke:white;stroke-width:2}
+.map-marker.is-origin .marker-halo{stroke:#00758e;stroke-width:3;stroke-dasharray:3 3}
+.flight-pick[aria-pressed=true]{background:var(--deep);color:white}
+.choosing-origin .map-target{cursor:crosshair}
+@media(max-width:700px){.flight-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}.flight-controls label{min-width:0}.flight-pick{grid-column:1/-1;grid-row:3}.flight-swap{grid-column:2;grid-row:1}.flight-arrival{grid-column:1;grid-row:2;min-width:0}.flight-distance{grid-column:2;grid-row:2;min-width:0}.flight-distance output{font-size:21px}.flight-arrival strong{font-size:14px}.flight-hint{min-height:0}}
+@media(prefers-reduced-motion:reduce){.flight-trail,.flight-plane path{filter:none}}
