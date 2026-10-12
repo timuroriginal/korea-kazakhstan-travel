@@ -79,6 +79,47 @@ try {
     for(const width of [320,390,768,1280]){await p.setViewportSize({width,height:900});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);}
     await mobile.close();
   });
+  await check('Airport distances are symmetric, bounded and use published reference points',async()=>{
+    const {airDistanceKm,airports}=await import('../assets/route-map.js');
+    assert.equal(airports.astana.arp,'510121N 0712758E');assert.equal(airports.almaty.arp,'432120N 0770238E');
+    assert.ok(Math.abs(airDistanceKm('astana','almaty')-950.4)<1);
+    assert.ok(Math.abs(airDistanceKm('astana','aktau')-1719)<1);
+    for(const from of Object.keys(airports))for(const to of Object.keys(airports)){
+      assert.equal(airDistanceKm(from,to),airDistanceKm(to,from));assert.ok(Number.isFinite(airDistanceKm(from,to)));
+      if(from===to)assert.equal(airDistanceKm(from,to),0);else assert.ok(airDistanceKm(from,to)>0&&airDistanceKm(from,to)<3000);
+    }
+    assert.equal(airDistanceKm('unknown','almaty'),null);
+  });
+  await check('Flight animation counts up, finishes and survives rapid destination changes',async()=>{
+    await page.emulateMedia({reducedMotion:'no-preference'});await go('routes');
+    await page.locator('#flight-origin').selectOption('almaty');await page.locator('[data-map-choice="astana"]').click();
+    assert.equal(await page.locator('#flight-distance').getAttribute('data-km'),'950');
+    const beginning=await page.locator('#flight-distance').innerText();assert.ok(Number(beginning.replace(/[^0-9]/g,''))<950);
+    await page.waitForFunction(()=>document.querySelector('#flight-distance').textContent.replace(/[^0-9]/g,'')==='950');
+    assert.equal(await page.locator('.flight-plane').count(),1);assert.equal(await page.locator('.flight-trail').evaluate(p=>Number(p.style.strokeDashoffset)),0);
+    for(const id of ['aktau','turkistan','astana'])await page.locator(`[data-map-choice="${id}"]`).click();
+    await page.waitForFunction(()=>document.querySelector('#flight-distance').textContent.replace(/[^0-9]/g,'')==='950');
+    await page.locator('#flight-swap').click();assert.equal(await page.locator('#flight-origin').inputValue(),'astana');assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'almaty');
+    await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.querySelector('#flight-distance').textContent==='≈ 950 km');assert.equal(await page.locator('.flight-trail').evaluate(p=>Number(p.style.strokeDashoffset)),0);
+    await page.locator('[data-map-choice="astana"]').click();assert.equal(await page.locator('.flight-plane').count(),0);assert.equal(await page.locator('#flight-distance').getAttribute('data-km'),'0');
+  });
+  await check('Map origin selection, cancellation and Burabay gateway are explicit',async()=>{
+    await page.locator('[data-map-choice="almaty"]').click();await page.locator('#flight-pick').click();
+    await page.locator('[data-map-choice="aktau"]').click();assert.equal(await page.locator('#flight-origin').inputValue(),'aktau');
+    assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'almaty');assert.equal(await page.locator('#flight-pick').getAttribute('aria-pressed'),'false');
+    await page.locator('#flight-pick').click();await page.keyboard.press('Escape');assert.equal(await page.locator('#flight-pick').getAttribute('aria-pressed'),'false');
+    await page.locator('[data-map-choice="burabay"]').click();assert.match(await page.locator('#flight-hint').innerText(),/콕셰타우/);
+    assert.match(await page.locator('#flight-distance').getAttribute('title'),/UATE → UACK/);
+    await page.locator('#flight-origin').selectOption('astana');await page.locator('[data-map-choice="almaty"]').click();
+    await go();assert.equal(await page.locator('#flight-origin').inputValue(),'astana');assert.equal(await page.locator('#flight-distance').getAttribute('data-km'),'950');
+  });
+  await check('Touch users select departure and arrival without hover',async()=>{
+    const c=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,reducedMotion:'reduce'});const p=await c.newPage();p.on('pageerror',e=>failures.push(e.message));
+    await p.goto(base);await p.locator('#flight-pick').tap();await p.locator('[data-map-choice="astana"]').tap();await p.locator('[data-map-choice="almaty"]').tap();
+    assert.equal(await p.locator('#flight-distance').getAttribute('data-km'),'950');assert.equal(await p.locator('#flight-origin').inputValue(),'astana');
+    for(const width of [320,390,768]){await p.setViewportSize({width,height:844});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);}
+    await c.close();
+  });
   await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
   await check('Almaty to Kok-Tobe, language toggle preserves nested route',async()=>{await go('destinations/almaty');await page.locator('a[href="#/places/kok-tobe"]').click();await page.locator('[data-gallery="0"]').waitFor();await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('html').getAttribute('lang'),'ru');assert.match(await page.locator('h1').innerText(),/Кок-Тобе/);assert.match(page.url(),/#\/places\/kok-tobe/);await page.reload();await page.locator('[data-gallery="0"]').waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'ru');});
   await check('Gallery and video dialog close on Escape and button',async()=>{await page.locator('[data-gallery="2"]').click();assert.match(await page.locator('#gallery-stage').innerText(),/Прогулка/);await page.locator('[data-gallery="3"]').click();await page.locator('#gallery-stage [data-video]').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);assert.match(await page.locator('dialog').innerText(),/Видео пока не загружено/);await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);await page.locator('#gallery-stage [data-video]').click();await page.locator('#dialog-close').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);});
