@@ -17,3 +17,17 @@ footer{border-top:1px solid var(--line);background:white;padding:28px 0;color:va
 @media(max-width:850px){.map-layout{grid-template-columns:1fr}.map-selection{display:grid;grid-template-columns:minmax(0,1fr) 60px;gap:12px}.map-pagination{flex-direction:column;justify-content:center}.map-instruction{grid-column:1/-1}#route-map-card{display:grid;grid-template-columns:180px 1fr;align-items:stretch}#route-map-card .media-slot{min-height:170px;height:100%}.map-card-content{padding:16px}.map-card-content h3{font-size:22px}.map-card-content .eyebrow{font-size:10px}.map-card-content .map-region-note{padding-top:6px}.map-surface{order:2}.map-label{font-size:18px}}
 @media(max-width:520px){.map-choices{display:grid;grid-template-columns:1fr 1fr;gap:7px}.map-choice{font-size:12px;padding:9px 10px}.map-selection{display:block}#route-map-card{display:block}#route-map-card .media-slot{min-height:145px}.map-pagination{flex-direction:row}.map-instruction{margin-bottom:16px}.map-label{font-size:22px;stroke-width:5px}.marker-dot{r:8px}.marker-halo{r:18px}.marker-hit{r:29px}.map-card-content h3{font-size:25px}}
 @media(prefers-reduced-motion:reduce){.map-area{transition:none}}
+
+/* The homepage uses the same explorer instead of six repeated text cards. */
+.map-home .map-layout{grid-template-columns:310px minmax(0,1fr)}
+.map-home #route-map-card .media-slot{min-height:190px}
+.map-home .map-region-note{display:none}
+.map-details{font-size:11px;color:var(--muted);margin-top:14px}
+.map-details summary{cursor:pointer;width:fit-content;min-height:32px;display:list-item}
+.map-details .map-caption{margin-top:8px}
+.map-marker.is-selected .marker-halo{filter:drop-shadow(0 0 6px #f3c54288)}
+#route-map-card>.media-slot,#route-map-card>.map-card-content{animation:mapCardReveal .24s ease-out}
+@keyframes mapCardReveal{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:850px){.map-home .map-layout{grid-template-columns:1fr}.map-home #route-map-card .media-slot{min-height:170px}}
+@media(max-width:520px){.map-home #route-map-card .media-slot{min-height:145px}}
+@media(prefers-reduced-motion:reduce){#route-map-card>.media-slot,#route-map-card>.map-card-content{animation:none}.map-marker.is-selected .marker-halo{filter:none}}
