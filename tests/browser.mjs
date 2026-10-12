@@ -27,10 +27,21 @@ try {
   });
   await check('Six independent route sections and six destination promo slots',async()=>{
     const ids=['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan'];
-    assert.deepEqual(await page.locator('#home-routes a').evaluateAll(links=>links.map(a=>a.getAttribute('href'))),ids.map(id=>`#/routes/${id}`));
+    assert.equal(await page.locator('#home-routes .practical-grid').count(),0);
+    for(const id of ids){await page.locator(`#home-routes [data-map-choice="${id}"]`).click();assert.equal(await page.locator('#route-map-card a').getAttribute('href'),`#/routes/${id}`);}
+    await page.locator('[data-map-choice="almaty"]').click();
     assert.deepEqual(await page.locator('#home-promos [data-video]').evaluateAll(buttons=>buttons.map(b=>b.dataset.video)),ids.map(id=>`${id}-video`));
     for(const id of ids){await go(`routes/${id}`);assert.equal(await page.locator(`a[href="#/destinations/${id}"]`).count(),1);await page.reload();await page.locator('h1').waitFor();}
     await go('routes');assert.equal(await page.locator('#route-directory a').count(),6);
+  });
+  await check('Homepage map replaces repeated cards and preserves choice across language and navigation',async()=>{
+    await go();await page.locator('#home-routes .map-marker[data-map-target="aktau"] .marker-hit').hover();
+    assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'aktau');
+    await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'aktau');
+    assert.match(await page.locator('#route-map-card h3').innerText(),/Актау/);
+    await page.locator('#home-routes details summary').click();assert.equal(await page.locator('#home-routes details').getAttribute('open'),'');
+    await page.locator('#route-map-card a').click();assert.match(page.url(),/#\/routes\/aktau/);
+    await go();await page.locator('[data-map-choice="almaty"]').click();await page.locator('[data-language="ko"]').click();
   });
   await check('Geographic explorer shows 20 real regions and six destination markers',async()=>{
     await go('routes');assert.equal(await page.locator('.map-area').count(),20);assert.equal(await page.locator('.map-marker').count(),6);assert.equal(await page.locator('[data-map-choice]').count(),6);
@@ -79,10 +90,10 @@ try {
   await check('Storage unavailable does not prevent navigation or saving',async()=>{const c=await browser.newContext({viewport:{width:390,height:844}});await c.addInitScript(()=>{Object.defineProperty(window,'localStorage',{get(){throw new Error('denied');}});});const p=await c.newPage();p.on('pageerror',e=>failures.push(e.message));await p.goto(`${base}/#/places/kok-tobe`);await p.locator('[data-save]').click();assert.equal(await p.locator('[data-save]').getAttribute('aria-pressed'),'true');assert.match(await p.locator('#toast').innerText(),/현재 세션/);await c.close();});
   await check('Reduced motion is respected and no runtime or HTTP errors',async()=>{await page.emulateMedia({reducedMotion:'reduce'});await go();assert.equal(await page.locator('#content').evaluate(e=>getComputedStyle(e).animationName),'none');assert.deepEqual(failures,[]);});
   await mkdir('test-results',{recursive:true});
-  await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1280,height:900});await go();await page.screenshot({path:'test-results/home-desktop.png',fullPage:true});
+  await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1280,height:900});await go();await page.screenshot({path:'test-results/home-desktop.png',fullPage:true});await page.locator('#home-routes').screenshot({path:'test-results/home-map-desktop.png'});
   await go('places/kok-tobe');await page.screenshot({path:'test-results/kok-tobe-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});await go('destinations/almaty');await page.screenshot({path:'test-results/almaty-mobile.png',fullPage:true});
   await page.setViewportSize({width:1280,height:900});await go('routes');await page.locator('#route-explorer').screenshot({path:'test-results/routes-map-desktop.png'});
-  await page.setViewportSize({width:390,height:844});await go('routes');await page.screenshot({path:'test-results/routes-map-mobile.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});await go();await page.locator('#home-routes').screenshot({path:'test-results/home-map-mobile.png'});await go('routes');await page.locator('#route-explorer').screenshot({path:'test-results/routes-map-mobile.png'});
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
