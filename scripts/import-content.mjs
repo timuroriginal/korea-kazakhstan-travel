@@ -21,5 +21,26 @@ const content={almaty:{overviewRu:overview['краткий обзор на ру�
   practical:rows['Практическое'].map(r=>({id:r['идентификатор'],section:r['раздел'],title:r['конкретная тема'],answerRu:r['короткий ответ для страницы'],answerKo:r['корейский редакционный черновик'],detailRu:r['подробное пояснение на русском'],source:rows['Источники'].find(s=>s.claim_id===r.claim_id)?.['прямая ссылка']||null})),
   routes:rows['Маршруты'].map(r=>({id:r.route_id,title:r['название маршрута'],day:r['день'],order:r['порядок остановки'],placeId:places.find(p=>p.researchId===r.place_id)?.id,parent:r['родитель маршрута'],note:r['ограничения']}))}};
 if(places.length!==26||new Set(places.map(p=>p.id)).size!==26)throw Error('Expected 26 identified, unique places');
-await fs.writeFile(new URL('../assets/content-data.js',import.meta.url),'// Reviewed Almaty package, 2026-10-13. Russian editorial preview; unknown fields stay null.\nexport const guideContent = '+JSON.stringify(content,null,2)+';\n');
+// Editorial overlays are independent of the research snapshot and survive reimport.
+const copy=JSON.parse(await fs.readFile(new URL('../data/almaty-copy.json',import.meta.url),'utf8'));
+const visitor=JSON.parse(await fs.readFile(new URL('../data/almaty-visitor-info.json',import.meta.url),'utf8'));
+const bilingual=value=>value&&typeof value.ru==='string'&&typeof value.ko==='string'&&value.ru.trim()&&value.ko.trim();
+for(const overlay of [copy.places,visitor.places]){
+  if(Object.keys(overlay).length!==places.length||places.some(p=>!overlay[p.id]))throw Error('Editorial place IDs do not match research');
+}
+for(const p of places){
+  p.copy=copy.places[p.id];p.visitor=visitor.places[p.id];
+  for(const s of p.sources){s.labelKo=copy.sourceLabelsKo[s.label];if(!s.labelKo)throw Error(`Missing source label: ${s.label}`);}
+  for(const field of ['card','body'])if(!bilingual(p.copy[field]))throw Error(`Missing ${p.id}.${field} adaptation`);
+  for(const field of ['address','transport','hours','price','duration','access','gaps']){
+    if(p.visitor[field]!==null&&!bilingual(p.visitor[field]))throw Error(`Missing ${p.id}.${field} adaptation`);
+  }
+  for(const field of ['address','hours','price'])if(Boolean(p[field])!==Boolean(p.visitor[field]))throw Error(`Unknown field changed: ${p.id}.${field}`);
+}
+content.almaty.copy=copy.destination;
+content.almaty.editorialDate=copy.editorialDate;
+content.almaty.languageReview=copy.languageReview;
+for(const p of content.almaty.practical){p.copy=copy.practical[p.id];if(!bilingual(p.copy?.answer)||!bilingual(p.copy?.detail))throw Error(`Missing practical adaptation: ${p.id}`);}
+for(const r of content.almaty.routes){r.copy={title:copy.routeTitles[r.id],note:copy.routeNotes[`${r.id}:${r.day}:${r.order}`]};if(!bilingual(r.copy.title)||!bilingual(r.copy.note))throw Error(`Missing route adaptation: ${r.id}`);}
+await fs.writeFile(new URL('../assets/content-data.js',import.meta.url),'// Almaty research with separate RU/KO editorial overlays. Unknown facts stay null.\nexport const guideContent = '+JSON.stringify(content,null,2)+';\n');
 console.log(`Compiled ${places.length} places, ${content.almaty.practical.length} practical topics.`);
