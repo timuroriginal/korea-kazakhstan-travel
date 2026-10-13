@@ -159,10 +159,28 @@ try {
     await go('places/almaty-gorelnik');assert.equal(await page.locator('.sidebar a[href*="2gis"]').count(),0);
     await go('places/almaty-medeu-visit-center');assert.match(await page.locator('h1').innerText(),/Страница не найдена/);
   });
-  await check('New saved places persist and Korean mode labels Russian draft text',async()=>{
+  await check('New saved places persist and Korean mode displays adapted text',async()=>{
     await go('places/almaty-green-bazaar');await page.locator('[data-save="almaty-green-bazaar"]').click();await page.reload();await page.locator('[data-save="almaty-green-bazaar"]').waitFor();assert.equal(await page.locator('[data-save="almaty-green-bazaar"]').getAttribute('aria-pressed'),'true');
     await go('saved');assert.equal(await page.locator('a[href="#/places/almaty-green-bazaar"]').count(),1);await page.locator('a[href="#/places/almaty-green-bazaar"]').click();await page.locator('[data-save="almaty-green-bazaar"]').click();
-    await page.locator('[data-language="ko"]').click();assert.match(await page.locator('.content-guide>.notice,.content-guide>div>.notice').first().innerText(),/러시아어/);assert.equal(await page.locator('#overview p').first().getAttribute('lang'),'ru');assert.match(page.url(),/almaty-green-bazaar/);await page.locator('[data-language="ru"]').click();
+    await page.locator('[data-language="ko"]').click();assert.equal(await page.locator('#overview p').first().getAttribute('lang'),'ko');assert.match(await page.locator('#overview').innerText(),/[가-힣]/);assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]/);assert.match(page.url(),/almaty-green-bazaar/);await page.locator('[data-language="ru"]').click();
+  });
+  await check('All 26 Korean pages have adapted descriptions and visitor facts',async()=>{
+    const {contentPlaces}=await import('../assets/content-pages.js');
+    await go('destinations/almaty');await page.locator('[data-language="ko"]').click();
+    for(const p of contentPlaces){await go(`places/${p.id}`);
+      const overview=await page.locator('#overview').innerText();
+      assert.ok(overview.includes(p.copy.body.ko.split('\n')[0]));assert.doesNotMatch(overview,/[А-Яа-яЁё]|[\u2013\u2014]/);
+      assert.equal(await page.locator('.page-heading p').innerText(),p.copy.card.ko);
+      assert.equal(await page.locator('.visit-facts dd').first().getAttribute('lang'),'ko');await noOverflow();
+    }
+    await go('places/almaty-bao');assert.match(await page.locator('.visit-facts').innerText(),/확인되지/);
+    await go('places/kok-tobe');assert.match(await page.locator('#panel-cable').innerText(),/하부/);await page.locator('[data-tab="ground"]').click();assert.match(await page.locator('#panel-ground').innerText(),/지상/);
+    await go('destinations/almaty');assert.equal(await page.locator('#overview p').first().getAttribute('lang'),'ko');
+    for(const section of ['transport','stay']){await page.locator(`#${section} details`).evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator(`#${section} .practical-answers`).innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);}
+    await page.locator('[data-place-group="city"] [data-place-search]').fill('카스테예프');assert.equal(await page.locator('[data-place-group="city"] .place-card').count(),1);
+    await go('routes/almaty');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    for(const width of [320,390]){await page.setViewportSize({width,height:900});await noOverflow();await go('destinations/almaty');await noOverflow();}
+    await page.locator('[data-language="ru"]').click();
   });
   await check('Almaty routes are linked sequences with separate third-day alternatives',async()=>{
     await go('routes/almaty');assert.equal(await page.locator('.itinerary-card').count(),4);await page.locator('.itinerary-card').last().locator('summary').click();
