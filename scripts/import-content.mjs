@@ -37,10 +37,27 @@ for(const p of places){
   }
   for(const field of ['address','hours','price'])if(Boolean(p[field])!==Boolean(p.visitor[field]))throw Error(`Unknown field changed: ${p.id}.${field}`);
 }
+const nature=JSON.parse(await fs.readFile(new URL('../data/almaty-nature.json',import.meta.url),'utf8'));
+for(const p of places){
+  const update=nature.updates[p.id];
+  if(update){Object.assign(p,update.fields);p.sources.push(...update.sources);}
+  p.visit=nature.visit[p.id];
+}
+for(const p of nature.places){
+  if(p.destination!=='almaty'||places.some(old=>old.id===p.id))throw Error(`Invalid additional place: ${p.id}`);
+  for(const field of ['card','body'])if(!bilingual(p.copy[field]))throw Error(`Missing new ${p.id}.${field}`);
+  for(const field of ['address','transport','hours','price','duration','access','gaps'])if(p.visitor[field]!==null&&!bilingual(p.visitor[field]))throw Error(`Missing new ${p.id}.${field}`);
+  for(const field of ['address','hours','price'])if(Boolean(p[field])!==Boolean(p.visitor[field]))throw Error(`Unknown new field changed: ${p.id}.${field}`);
+  if(!p.sources.length||p.sources.some(s=>!s.url.startsWith('https://')||!s.labelKo))throw Error(`Missing new source: ${p.id}`);
+  places.push(p);
+}
+for(const p of places){
+  for(const field of ['format','effort','language'])if(!bilingual(p.visit?.[field]))throw Error(`Missing visitor guidance: ${p.id}.${field}`);
+}
 content.almaty.copy=copy.destination;
 content.almaty.editorialDate=copy.editorialDate;
 content.almaty.languageReview=copy.languageReview;
-for(const p of content.almaty.practical){p.copy=copy.practical[p.id];if(!bilingual(p.copy?.answer)||!bilingual(p.copy?.detail))throw Error(`Missing practical adaptation: ${p.id}`);}
+for(const p of content.almaty.practical){p.copy=copy.practical[p.id];p.source=nature.practicalSources[p.id]||p.source;if(!bilingual(p.copy?.answer)||!bilingual(p.copy?.detail))throw Error(`Missing practical adaptation: ${p.id}`);}
 for(const r of content.almaty.routes){r.copy={title:copy.routeTitles[r.id],note:copy.routeNotes[`${r.id}:${r.day}:${r.order}`]};if(!bilingual(r.copy.title)||!bilingual(r.copy.note))throw Error(`Missing route adaptation: ${r.id}`);}
 await fs.writeFile(new URL('../assets/content-data.js',import.meta.url),'// Almaty research with separate RU/KO editorial overlays. Unknown facts stay null.\nexport const guideContent = '+JSON.stringify(content,null,2)+';\n');
 console.log(`Compiled ${places.length} places, ${content.almaty.practical.length} practical topics.`);
