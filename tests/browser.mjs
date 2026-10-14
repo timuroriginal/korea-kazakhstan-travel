@@ -147,8 +147,8 @@ try {
     assert.equal(await page.locator('[data-place-id="almaty-medeu-visit-center"]').count(),0);
     await page.locator('[data-scroll="nearby"]').first().click();assert.match(page.url(),/#\/destinations\/almaty$/);
   });
-  await check('All 41 place pages preserve internal research without public source furniture',async()=>{
-    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,41);
+  await check('All 57 place pages preserve internal research without public source furniture',async()=>{
+    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,57);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
     for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.ok(p.sources.length>0);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
     await go('places/almaty-zoo');await page.reload();await page.locator('h1').waitFor();assert.match(await page.locator('#practical').innerText(),/1 427|1427/);
   });
@@ -164,7 +164,7 @@ try {
     await go('saved');assert.equal(await page.locator('a[href="#/places/almaty-green-bazaar"]').count(),1);await page.locator('a[href="#/places/almaty-green-bazaar"]').click();await page.locator('[data-save="almaty-green-bazaar"]').click();
     await page.locator('[data-language="ko"]').click();assert.equal(await page.locator('#overview p').first().getAttribute('lang'),'ko');assert.match(await page.locator('#overview').innerText(),/[가-힣]/);assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]/);assert.match(page.url(),/almaty-green-bazaar/);await page.locator('[data-language="ru"]').click();
   });
-  await check('All 41 Korean pages have adapted descriptions and visitor facts',async()=>{
+  await check('All published Korean place pages have adapted descriptions and visitor facts',async()=>{
     const {contentPlaces}=await import('../assets/content-pages.js');
     await go('destinations/almaty');await page.locator('[data-language="ko"]').click();
     for(const p of contentPlaces){await go(`places/${p.id}`);
@@ -205,7 +205,55 @@ try {
     for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const r of ['destinations/almaty','places/almaty-kasteev-museum','routes/almaty']){await go(r);await noOverflow();}}
     assert.deepEqual(failures,[]);
   });
+  await check('Astana catalog, seasons and nearby trips use their own data',async()=>{
+    await go('destinations/astana');
+    const all=page.locator('[data-place-group="all"]');
+    assert.match(await all.locator('[data-place-count]').innerText(),/из 16/);
+    assert.equal(await page.locator('.season-details details').count(),7);
+    await all.locator('[data-place-filter="food"]').click();assert.equal(await all.locator('.place-card').count(),1);
+    assert.match(await all.innerText(),/Sandyq/);
+    await all.locator('[data-place-filter="all"]').click();await all.locator('[data-place-search]').fill('Байтерек');
+    assert.equal(await all.locator('[data-place-id="astana-baiterek"]').count(),1);
+    assert.equal(await all.locator('[data-place-id^="almaty"]').count(),0);
+    const nearby=page.locator('[data-place-group="nearby"]');assert.equal(await nearby.locator('.place-card').count(),3);
+    assert.match(await nearby.locator('[data-place-id="astana-karlag"]').innerText(),/Дальний выезд/);
+    assert.equal(await page.locator('#transport details').count(),3);assert.equal(await page.locator('#stay details').count(),2);
+  });
+  await check('Astana places have correct breadcrumbs, unknown prices and no public source blocks',async()=>{
+    const {contentPlaces}=await import('../assets/content-pages.js');
+    for(const p of contentPlaces.filter(p=>p.destination==='astana')){
+      await go(`places/${p.id}`);assert.equal(await page.locator('h1').innerText(),p.name.ru);
+      assert.equal(await page.locator('.breadcrumbs a[href="#/destinations/astana"]').count(),1);
+      assert.equal(await page.locator('.breadcrumbs a[href="#/destinations/almaty"]').count(),0);
+      assert.equal(await page.locator('.page-heading .eyebrow').innerText().then(s=>s.startsWith('ASTANA')),true);
+      assert.equal(await page.locator('#content a[href^="https://"]').count(),0);
+      assert.doesNotMatch(await page.locator('#overview').innerText(),/2ГИС|по отзывам|[\u2013\u2014]/);
+    }
+    await go('places/astana-national-museum');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);
+    for(const id of ['astana-ak-orda-view','astana-seifullin']){await go(`places/${id}`);assert.match(await page.locator('h1').innerText(),/Страница не найдена/);}
+  });
+  await check('Astana Korean search, routes and saved places remain city-specific',async()=>{
+    await go('destinations/astana');await page.locator('[data-language="ko"]').click();
+    await page.locator('[data-place-group="all"] [data-place-search]').fill('바이테레크');assert.equal(await page.locator('[data-place-group="all"] .place-card').count(),1);
+    await page.locator('.season-details details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+    assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    await go('routes/astana');assert.equal(await page.locator('.itinerary-card').count(),6);
+    await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+    assert.equal(await page.locator('.itinerary-card a[href^="#/places/almaty"]').count(),0);
+    assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    await go('places/astana-baiterek');await page.locator('[data-save="astana-baiterek"]').click();await go('saved');
+    assert.equal(await page.locator('a[href="#/places/astana-baiterek"]').count(),1);
+    await page.locator('a[href="#/places/astana-baiterek"]').click();await page.locator('[data-save="astana-baiterek"]').click();
+    await page.locator('[data-language="ru"]').click();
+  });
+  await check('Astana pages fit mobile screens and preserve practical language limits',async()=>{
+    for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const route of ['destinations/astana','places/astana-singularity','routes/astana']){await go(route);await noOverflow();}}
+    await go('places/astana-alzhir');assert.match(await page.locator('.visit-guidance').innerText(),/Корейск|корейск/);
+    assert.deepEqual(failures,[]);
+  });
   await mkdir('test-results',{recursive:true});
+  await page.setViewportSize({width:1280,height:900});await go('destinations/astana');await page.screenshot({path:'test-results/astana-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/astana-mobile.png',fullPage:true});
   await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1280,height:900});await go();await page.screenshot({path:'test-results/home-desktop.png',fullPage:true});await page.locator('#home-routes').screenshot({path:'test-results/home-map-desktop.png'});
   await go('places/kok-tobe');await page.screenshot({path:'test-results/kok-tobe-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});await go('destinations/almaty');await page.screenshot({path:'test-results/almaty-mobile.png',fullPage:true});
