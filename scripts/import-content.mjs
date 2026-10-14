@@ -43,7 +43,8 @@ for(const p of places){
   if(update){Object.assign(p,update.fields);p.sources.push(...update.sources);}
   p.visit=nature.visit[p.id];
 }
-for(const p of nature.places){
+const city=JSON.parse(await fs.readFile(new URL('../data/almaty-city.json',import.meta.url),'utf8'));
+for(const p of [...nature.places,...city.places]){
   if(p.destination!=='almaty'||places.some(old=>old.id===p.id))throw Error(`Invalid additional place: ${p.id}`);
   for(const field of ['card','body'])if(!bilingual(p.copy[field]))throw Error(`Missing new ${p.id}.${field}`);
   for(const field of ['address','transport','hours','price','duration','access','gaps'])if(p.visitor[field]!==null&&!bilingual(p.visitor[field]))throw Error(`Missing new ${p.id}.${field}`);
