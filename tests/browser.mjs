@@ -139,7 +139,7 @@ try {
   await check('Almaty filters combine with search, empty state and expansion',async()=>{
     await go('destinations/almaty');const city=page.locator('[data-place-group="all"]');
     assert.equal(await city.locator('.place-card').count(),6);
-    await city.locator('[data-place-more]').click();assert.equal(await city.locator('.place-card').count(),40);
+    await city.locator('[data-place-more]').click();assert.equal(await city.locator('.place-card').count(),41);
     await city.locator('[data-place-filter="culture"]').click();await city.locator('[data-place-search]').fill('базар');assert.equal(await city.locator('.place-card').count(),0);
     await city.locator('[data-place-filter="shopping"]').click();assert.equal(await city.locator('.place-card').count(),1);assert.match(await city.locator('h3').innerText(),/Зелёный/);
     await city.locator('[data-place-search]').fill('');await city.locator('[data-place-filter="all"]').click();assert.equal(await city.locator('.place-card').count(),6);
@@ -147,8 +147,8 @@ try {
     assert.equal(await page.locator('[data-place-id="almaty-medeu-visit-center"]').count(),0);
     await page.locator('[data-scroll="nearby"]').first().click();assert.match(page.url(),/#\/destinations\/almaty$/);
   });
-  await check('All 40 place pages have body, scoped sources and survive refresh',async()=>{
-    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,40);
+  await check('All 41 place pages have body, scoped sources and survive refresh',async()=>{
+    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,41);
     for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.ok(await page.locator('#sources a').count()>0);await noOverflow();}
     await go('places/almaty-zoo');await page.reload();await page.locator('h1').waitFor();assert.match(await page.locator('#practical').innerText(),/1 427|1427/);
   });
@@ -164,7 +164,7 @@ try {
     await go('saved');assert.equal(await page.locator('a[href="#/places/almaty-green-bazaar"]').count(),1);await page.locator('a[href="#/places/almaty-green-bazaar"]').click();await page.locator('[data-save="almaty-green-bazaar"]').click();
     await page.locator('[data-language="ko"]').click();assert.equal(await page.locator('#overview p').first().getAttribute('lang'),'ko');assert.match(await page.locator('#overview').innerText(),/[가-힣]/);assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]/);assert.match(page.url(),/almaty-green-bazaar/);await page.locator('[data-language="ru"]').click();
   });
-  await check('All 40 Korean pages have adapted descriptions and visitor facts',async()=>{
+  await check('All 41 Korean pages have adapted descriptions and visitor facts',async()=>{
     const {contentPlaces}=await import('../assets/content-pages.js');
     await go('destinations/almaty');await page.locator('[data-language="ko"]').click();
     for(const p of contentPlaces){await go(`places/${p.id}`);
