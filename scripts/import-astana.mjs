@@ -12,6 +12,16 @@ const places=input.places.filter(p=>p.decision!=='reserve').map(p=>({
   visit:{format:p.format,effort:p.effort,language:p.language},checkedAt:p.checkedAt,
   sources:p.sources.map(id=>input.research.sources.find(s=>s.id===id))
 }));
+const additions=JSON.parse(await fs.readFile(new URL('../data/astana-city.json',import.meta.url),'utf8'));
+for(const p of additions.places){
+ if(p.destination!=='astana'||places.some(old=>old.id===p.id))throw Error('Invalid Astana addition '+p.id);
+ for(const section of ['copy','visit','visitor'])for(const [key,value] of Object.entries(p[section])){
+  if(value===null)continue;
+  if(typeof value.ru!=='string'||typeof value.ko!=='string'||/[А-Яа-яЁё\u2013\u2014]/.test(value.ko)||/[\u2013\u2014]/.test(value.ru))throw Error('Invalid bilingual addition '+p.id+'.'+key);
+ }
+ for(const key of ['address','hours','price'])if(Boolean(p[key])!==Boolean(p.visitor[key]))throw Error('Changed unknown field '+p.id+'.'+key);
+ places.push(p);
+}
 const sections={arrival:'Прибытие',bus:'Городской транспорт',lrt:'Городской транспорт',stay:'Проживание',food:'Еда',season:'Сезоны'};
 const practical=input.practical.map(p=>({id:p.id,section:sections[p.id.replace('astana-practical-','')],title:p.title.ru,titleKo:p.title.ko,copy:{answer:p.text,detail:pair('',''),phrase:p.phrase},sources:p.sources}));
 if(practical.some(p=>!p.section))throw Error('Unknown practical section');
@@ -23,7 +33,7 @@ const data={copy:{intro:input.overview.intro,overview:input.overview.body,durati
   audience:pair('Архитектура, история и неспешные прогулки у Есиля.','건축과 역사, 예실강을 따라 걷는 여유로운 산책에 관심 있는 여행.')},
   places,practical,routes,seasons:input.seasons,editorialDate:input.checkedAt,languageReview:input.languageReview};
 const ids=new Set(places.map(p=>p.id));
-if(ids.size!==16||places.length!==16)throw Error('Expected 16 public places; 2 editorial reserves remain private');
+if(ids.size!==18||places.length!==18)throw Error('Expected 18 public places; 2 editorial reserves remain private');
 for(const r of routes)if(!ids.has(r.placeId))throw Error('Route references hidden place '+r.placeId);
 for(const p of places){
  if(!['architecture','culture','parks','shopping','food','nature'].includes(p.category))throw Error('Category '+p.category);
