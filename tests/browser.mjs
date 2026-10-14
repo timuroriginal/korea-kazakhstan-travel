@@ -147,8 +147,8 @@ try {
     assert.equal(await page.locator('[data-place-id="almaty-medeu-visit-center"]').count(),0);
     await page.locator('[data-scroll="nearby"]').first().click();assert.match(page.url(),/#\/destinations\/almaty$/);
   });
-  await check('All 57 place pages preserve internal research without public source furniture',async()=>{
-    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,57);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
+  await check('All 59 place pages preserve internal research without public source furniture',async()=>{
+    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,59);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
     for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.ok(p.sources.length>0);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
     await go('places/almaty-zoo');await page.reload();await page.locator('h1').waitFor();assert.match(await page.locator('#practical').innerText(),/1 427|1427/);
   });
@@ -208,9 +208,9 @@ try {
   await check('Astana catalog, seasons and nearby trips use their own data',async()=>{
     await go('destinations/astana');
     const all=page.locator('[data-place-group="all"]');
-    assert.match(await all.locator('[data-place-count]').innerText(),/из 16/);
+    assert.match(await all.locator('[data-place-count]').innerText(),/из 18/);
     assert.equal(await page.locator('.season-details details').count(),7);
-    await all.locator('[data-place-filter="food"]').click();assert.equal(await all.locator('.place-card').count(),1);
+    await all.locator('[data-place-filter="food"]').click();assert.equal(await all.locator('.place-card').count(),2);
     assert.match(await all.innerText(),/Sandyq/);
     await all.locator('[data-place-filter="all"]').click();await all.locator('[data-place-search]').fill('Байтерек');
     assert.equal(await all.locator('[data-place-id="astana-baiterek"]').count(),1);
@@ -250,6 +250,16 @@ try {
     for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const route of ['destinations/astana','places/astana-singularity','routes/astana']){await go(route);await noOverflow();}}
     await go('places/astana-alzhir');assert.match(await page.locator('.visit-guidance').innerText(),/Корейск|корейск/);
     assert.deepEqual(failures,[]);
+  });
+  await check('Daididau and MEGA have distinct usable visitor profiles in both languages',async()=>{
+    await go('destinations/astana');const all=page.locator('[data-place-group="all"]');
+    await all.locator('[data-place-filter="food"]').click();assert.equal(await all.locator('[data-place-id="astana-daididau"]').count(),1);
+    await all.locator('[data-place-filter="shopping"]').click();assert.equal(await all.locator('[data-place-id="astana-mega-silk-way"]').count(),1);
+    await go('places/astana-daididau');assert.match(await page.locator('#overview').innerText(),/семьи Димаша/);assert.match(await page.locator('.visit-facts').innerText(),/7 800|7800/);assert.match(await page.locator('.visit-guidance').innerText(),/английскими/);
+    await go('places/astana-mega-silk-way');assert.match(await page.locator('#overview').innerText(),/EXPO/);assert.match(await page.locator('.address-box').innerText(),/62/);assert.match(await page.locator('.visit-facts').innerText(),/22:00/);
+    await page.locator('[data-language="ko"]').click();
+    for(const id of ['astana-daididau','astana-mega-silk-way']){await go('places/'+id);assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);assert.equal(await page.locator('a[href*="2gis"]').count(),0);}
+    await page.locator('[data-language="ru"]').click();
   });
   await mkdir('test-results',{recursive:true});
   await page.setViewportSize({width:1280,height:900});await go('destinations/astana');await page.screenshot({path:'test-results/astana-desktop.png',fullPage:true});
