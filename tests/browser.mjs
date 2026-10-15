@@ -147,9 +147,9 @@ try {
     assert.equal(await page.locator('[data-place-id="almaty-medeu-visit-center"]').count(),0);
     await page.locator('[data-scroll="nearby"]').first().click();assert.match(page.url(),/#\/destinations\/almaty$/);
   });
-  await check('All 68 place pages preserve internal research without public source furniture',async()=>{
-    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,68);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
-    for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.ok(p.sources.length>0);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
+  await check('All 80 place pages preserve internal research without public source furniture',async()=>{
+    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,80);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
+    for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.equal(p.destination==='aktau'?p.sources.length===0:p.sources.length>0,true);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
     await go('places/almaty-zoo');await page.reload();await page.locator('h1').waitFor();assert.match(await page.locator('#practical').innerText(),/1 427|1427/);
   });
   await check('Restrictions and unknown prices do not become open or free promises',async()=>{
@@ -293,7 +293,39 @@ try {
     for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const route of ['destinations/turkistan','places/turkistan-sandyq','routes/turkistan']){await go(route);await noOverflow();}}
     await go('places/turkistan-khilvet');assert.match(await page.locator('.visit-guidance').innerText(),/Корейск/);assert.deepEqual(failures,[]);
   });
+  await check('Aktau catalog separates coastal places, nature, food and reserves',async()=>{
+    await go('destinations/aktau');const all=page.locator('[data-place-group="all"]');
+    assert.match(await all.locator('[data-place-count]').innerText(),/из 12/);
+    assert.equal(await page.locator('.season-details details').count(),4);
+    await all.locator('[data-place-filter="water"]').click();assert.equal(await all.locator('.place-card').count(),2);
+    await all.locator('[data-place-filter="food"]').click();assert.equal(await all.locator('.place-card').count(),2);
+    await all.locator('[data-place-filter="mountains"]').click();assert.equal(await all.locator('.place-card').count(),6);
+    assert.equal(await all.locator('[data-place-id="aktau-sherkala"]').count(),1);assert.equal(await all.locator('[data-place-id="aktau-airakty"]').count(),1);
+    for(const id of ['dostar-beach','regional-museum','shopan-ata','sultan-epe']){await go('places/aktau-'+id);assert.match(await page.locator('h1').innerText(),/Страница не найдена/);}
+  });
+  await check('Aktau retains unknown admission, delivery price scope and return conditions',async()=>{
+    await go('places/aktau-jeti');assert.match(await page.locator('.visit-facts').innerText(),/доставки/);assert.equal(await page.locator('.show-phrase button').getAttribute('data-copy'),'Фишбармак');
+    await go('places/aktau-bozzhyra');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);assert.match(await page.locator('#transport').innerText(),/Возвращение/);
+    await go('places/aktau-rock-trail');assert.match(await page.locator('.page-heading').innerText(),/Сквозной проход/);
+    await go('routes/aktau');assert.equal(await page.locator('.itinerary-card').count(),4);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
+    await page.locator('.itinerary-card').last().locator('summary').click();assert.equal(await page.locator('.itinerary-card').last().locator('li').nth(1).locator('.muted').first().innerText(),'День 2');
+  });
+  await check('Aktau Korean copy, search, routes and saved place remain usable',async()=>{
+    await go('destinations/aktau');await page.locator('[data-language="ko"]').click();const all=page.locator('[data-place-group="all"]');
+    await all.locator('[data-place-search]').fill('제티');assert.equal(await all.locator('.place-card').count(),1);
+    await page.locator('.season-details details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    await go('routes/aktau');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    await go('places/aktau-jeti');await page.locator('[data-save="aktau-jeti"]').click();await go('saved');assert.equal(await page.locator('a[href="#/places/aktau-jeti"]').count(),1);
+    await go('places/aktau-jeti');await page.locator('[data-save="aktau-jeti"]').click();await page.locator('[data-language="ru"]').click();
+  });
+  await check('Aktau mobile pages and long return guidance fit the viewport',async()=>{
+    for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const route of ['destinations/aktau','places/aktau-shakpak-ata','places/aktau-jeti','routes/aktau']){await go(route);await noOverflow();}}
+    assert.deepEqual(failures,[]);
+  });
   await mkdir('test-results',{recursive:true});
+  await page.setViewportSize({width:1280,height:900});await go('destinations/aktau');await page.screenshot({path:'test-results/aktau-desktop-viewport.png'});
+  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/aktau-mobile-viewport.png'});
+  await go('places/aktau-jeti');await page.screenshot({path:'test-results/aktau-jeti-mobile.png'});
   await page.setViewportSize({width:1280,height:900});await go('destinations/turkistan');await page.screenshot({path:'test-results/turkistan-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/turkistan-mobile.png',fullPage:true});
   await page.setViewportSize({width:1280,height:900});await go('destinations/astana');await page.screenshot({path:'test-results/astana-desktop.png',fullPage:true});
