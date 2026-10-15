@@ -147,8 +147,8 @@ try {
     assert.equal(await page.locator('[data-place-id="almaty-medeu-visit-center"]').count(),0);
     await page.locator('[data-scroll="nearby"]').first().click();assert.match(page.url(),/#\/destinations\/almaty$/);
   });
-  await check('All 59 place pages preserve internal research without public source furniture',async()=>{
-    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,59);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
+  await check('All 68 place pages preserve internal research without public source furniture',async()=>{
+    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,68);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
     for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.ok(p.sources.length>0);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
     await go('places/almaty-zoo');await page.reload();await page.locator('h1').waitFor();assert.match(await page.locator('#practical').innerText(),/1 427|1427/);
   });
@@ -261,7 +261,41 @@ try {
     for(const id of ['astana-daididau','astana-mega-silk-way']){await go('places/'+id);assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);assert.equal(await page.locator('a[href*="2gis"]').count(),0);}
     await page.locator('[data-language="ru"]').click();
   });
+  await check('Turkistan catalog keeps reserves private and nearby copy specific',async()=>{
+    await go('destinations/turkistan');await page.setViewportSize({width:1280,height:900});
+    const all=page.locator('[data-place-group="all"]');
+    assert.match(await all.locator('[data-place-count]').innerText(),/из 9/);
+    await all.locator('[data-place-more]').click();assert.equal(await all.locator('.place-card').count(),9);
+    assert.equal(await all.locator('.place-card').filter({hasText:'Есть условия посещения'}).count(),5);
+    assert.doesNotMatch(await page.locator('#nearby').innerText(),/Горы|Курорт|Карлаг/);
+    await all.locator('[data-place-filter="food"]').click();assert.equal(await all.locator('.place-card').count(),2);
+    await all.locator('[data-place-search]').fill('Kerege');assert.equal(await all.locator('.place-card').count(),1);
+    await go('places/turkistan-otrar-museum-shaulder');assert.match(await page.locator('h1').innerText(),/Страница не найдена/);
+  });
+  await check('Turkistan does not invent bundled tickets, addresses or return transport',async()=>{
+    await go('places/turkistan-yasawi');assert.match(await page.locator('.visit-facts').innerText(),/2 000/);assert.match(await page.locator('.visit-facts').innerText(),/пока не установлен/);
+    await go('places/turkistan-sandyq');assert.equal(await page.locator('.address-box button').count(),0);assert.match(await page.locator('#practical').innerText(),/SMS/);
+    await go('places/turkistan-otrar-reserve');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);
+    await go('routes/turkistan');assert.equal(await page.locator('.itinerary-card').count(),3);
+    assert.equal(await page.locator('.itinerary-card .access-badge').count(),2);
+    assert.equal(await page.locator('a[href*="otrar-museum-shaulder"]').count(),0);
+  });
+  await check('Turkistan Korean discovery, local food names and saved cards work',async()=>{
+    await go('destinations/turkistan');await page.locator('[data-language="ko"]').click();
+    const all=page.locator('[data-place-group="all"]');await all.locator('[data-place-search]').fill('산드크');assert.equal(await all.locator('.place-card').count(),1);
+    await go('places/turkistan-kerege');assert.match(await page.locator('.visit-facts').innerText(),/10%/);assert.equal(await page.locator('.show-phrase').count(),2);
+    assert.equal(await page.locator('.show-phrase button').first().getAttribute('data-copy'),'Манты с говядиной');
+    await page.locator('[data-save="turkistan-kerege"]').click();await go('saved');assert.equal(await page.locator('a[href="#/places/turkistan-kerege"]').count(),1);
+    await go('places/turkistan-kerege');await page.locator('[data-save="turkistan-kerege"]').click();
+    await page.locator('[data-language="ru"]').click();
+  });
+  await check('Turkistan pages fit small screens and retain specific language caveats',async()=>{
+    for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const route of ['destinations/turkistan','places/turkistan-sandyq','routes/turkistan']){await go(route);await noOverflow();}}
+    await go('places/turkistan-khilvet');assert.match(await page.locator('.visit-guidance').innerText(),/Корейск/);assert.deepEqual(failures,[]);
+  });
   await mkdir('test-results',{recursive:true});
+  await page.setViewportSize({width:1280,height:900});await go('destinations/turkistan');await page.screenshot({path:'test-results/turkistan-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/turkistan-mobile.png',fullPage:true});
   await page.setViewportSize({width:1280,height:900});await go('destinations/astana');await page.screenshot({path:'test-results/astana-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/astana-mobile.png',fullPage:true});
   await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1280,height:900});await go();await page.screenshot({path:'test-results/home-desktop.png',fullPage:true});await page.locator('#home-routes').screenshot({path:'test-results/home-map-desktop.png'});
