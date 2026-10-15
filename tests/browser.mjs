@@ -147,9 +147,9 @@ try {
     assert.equal(await page.locator('[data-place-id="almaty-medeu-visit-center"]').count(),0);
     await page.locator('[data-scroll="nearby"]').first().click();assert.match(page.url(),/#\/destinations\/almaty$/);
   });
-  await check('All 80 place pages preserve internal research without public source furniture',async()=>{
-    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,80);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
-    for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.equal(p.destination==='aktau'?p.sources.length===0:p.sources.length>0,true);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
+  await check('All 90 place pages preserve internal research without public source furniture',async()=>{
+    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,90);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
+    for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.equal(['aktau','burabay'].includes(p.destination)?p.sources.length===0:p.sources.length>0,true);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
     await go('places/almaty-zoo');await page.reload();await page.locator('h1').waitFor();assert.match(await page.locator('#practical').innerText(),/1 427|1427/);
   });
   await check('Restrictions and unknown prices do not become open or free promises',async()=>{
@@ -322,7 +322,42 @@ try {
     for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const route of ['destinations/aktau','places/aktau-shakpak-ata','places/aktau-jeti','routes/aktau']){await go(route);await noOverflow();}}
     assert.deepEqual(failures,[]);
   });
+  await check('Burabay has ten specific profiles, five conditions, four seasons and independent filters',async()=>{
+    await page.setViewportSize({width:1280,height:900});await go('destinations/burabay');
+    const all=page.locator('[data-place-group="all"]');assert.match(await all.locator('[data-place-count]').innerText(),/из 10/);
+    assert.equal(await page.locator('.season-details details').count(),4);
+    await all.locator('[data-place-more]').click();assert.equal(await all.locator('.place-card').count(),10);
+    assert.equal(await all.locator('.access-badge').count(),5);
+    await all.locator('[data-place-filter="food"]').click();assert.equal(await all.locator('.place-card').count(),2);
+    await all.locator('[data-place-search]').fill('Byrabai');assert.equal(await all.locator('.place-card').count(),1);
+    await all.locator('[data-place-search]').fill('');await all.locator('[data-place-filter="nature"]').click();assert.equal(await all.locator('.place-card').count(),5);
+    for(const id of ['beach','winter','forest-trail','shchuchinsk-base','multimedia','imanaev-creek','shchuchye-lake']){await go('places/burabay-'+id);assert.match(await page.locator('h1').innerText(),/Страница не найдена/);}
+  });
+  await check('Burabay keeps unknown entry, museum tariff, route return and day boundaries explicit',async()=>{
+    await go('places/burabay-botai');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);assert.doesNotMatch(await page.locator('.visit-facts').innerText(),/500/);
+    await go('places/burabay-baitas');assert.match(await page.locator('.page-heading').innerText(),/без проживания пока не подтверждён/);
+    await go('places/burabay-ybyrai-trail');assert.match(await page.locator('.visit-facts').innerText(),/конечной точки/);assert.match(await page.locator('#transport').innerText(),/пока не установлен/);
+    await go('places/burabay-byrabai');assert.match(await page.locator('.visit-facts').innerText(),/средний чек/);assert.equal(await page.locator('.show-phrase button').first().getAttribute('data-copy'),'Манты');assert.match(await page.locator('.visit-facts').innerText(),/Оплата/);
+    await go('routes/burabay');assert.equal(await page.locator('.itinerary-card').count(),4);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
+    await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.route-transport').count(),4);assert.match(await page.locator('.route-transport').last().innerText(),/Возвращение/);
+    const last=page.locator('.itinerary-card').last();assert.equal(await last.locator('li').nth(2).locator('.muted').first().innerText(),'День 2');assert.equal(await last.locator('a[href*="ybyrai"]').count(),0);
+  });
+  await check('Burabay Korean copy, practical topics, routes and saved place work without local language assumptions',async()=>{
+    await go('destinations/burabay');await page.locator('[data-language="ko"]').click();
+    const all=page.locator('[data-place-group="all"]');await all.locator('[data-place-search]').fill('줌박타스');assert.equal(await all.locator('.place-card').count(),1);
+    await page.locator('.season-details details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    for(const section of ['transport','stay']){await page.locator(`#${section} details`).evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator(`#${section} .practical-answers`).innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);}
+    await go('routes/burabay');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    await go('places/burabay-byrabai');await page.locator('[data-save="burabay-byrabai"]').click();await go('saved');assert.equal(await page.locator('a[href="#/places/burabay-byrabai"]').count(),1);await go('places/burabay-byrabai');await page.locator('[data-save="burabay-byrabai"]').click();await page.locator('[data-language="ru"]').click();
+  });
+  await check('Burabay fits mobile and its public module contains no research registry',async()=>{
+    for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const route of ['destinations/burabay','places/burabay-bolektau','places/burabay-byrabai','routes/burabay']){await go(route);await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();}}
+    const raw=await (await context.request.get(base+'/assets/burabay-data.js')).text();assert.doesNotMatch(raw,/sourceIds|internalGaps|provenance|checkedAt|https?:\/\/|\/Users\//);assert.deepEqual(failures,[]);
+  });
   await mkdir('test-results',{recursive:true});
+  await page.setViewportSize({width:1280,height:900});await go('destinations/burabay');await page.screenshot({path:'test-results/burabay-desktop-viewport.png'});
+  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/burabay-mobile-viewport.png'});
+  await go('routes/burabay');await page.locator('.itinerary-card').first().locator('summary').click();await page.screenshot({path:'test-results/burabay-routes-mobile.png'});
   await page.setViewportSize({width:1280,height:900});await go('destinations/aktau');await page.screenshot({path:'test-results/aktau-desktop-viewport.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/aktau-mobile-viewport.png'});
   await go('places/aktau-jeti');await page.screenshot({path:'test-results/aktau-jeti-mobile.png'});
