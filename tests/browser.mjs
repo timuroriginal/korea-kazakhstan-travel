@@ -126,7 +126,7 @@ try {
     await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent==='≈ 950 km',null,{polling:100});
     await p.locator('[data-map-choice="aktau"]').click();await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent.replace(/[^0-9]/g,'')==='1719',null,{polling:100});await c.close();
   });
-  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
+  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),id==='ust-kamenogorsk'?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
   await check('Almaty to Kok-Tobe, language toggle preserves nested route',async()=>{await go('destinations/almaty');await page.locator('.place-card[href="#/places/kok-tobe"]').click();await page.locator('[data-gallery="0"]').waitFor();await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('html').getAttribute('lang'),'ru');assert.match(await page.locator('h1').innerText(),/Кок-Тобе/);assert.match(page.url(),/#\/places\/kok-tobe/);await page.reload();await page.locator('[data-gallery="0"]').waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'ru');});
   await check('Gallery and video dialog close on Escape and button',async()=>{await page.locator('[data-gallery="2"]').click();assert.match(await page.locator('#gallery-stage').innerText(),/Прогулка/);await page.locator('[data-gallery="3"]').click();await page.locator('#gallery-stage [data-video]').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);assert.match(await page.locator('dialog').innerText(),/Видео пока не загружено/);await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);await page.locator('#gallery-stage [data-video]').click();await page.locator('#dialog-close').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);});
   await check('Transport tabs support keyboard selection',async()=>{await page.locator('#tab-cable').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#tab-ground').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#panel-ground').isVisible(),true);await page.keyboard.press('Home');assert.equal(await page.locator('#panel-cable').isVisible(),true);});
@@ -395,6 +395,43 @@ try {
     const raw=await (await context.request.get(base+'/assets/oskemen-data.js')).text();assert.doesNotMatch(raw,/sourceIds|internalGaps|provenance|checkedAt|https?:\/\/|\/Users\/|oskemen-kiin-kerish|oskemen-rakhman/);assert.deepEqual(failures,[]);
   });
   await mkdir('test-results',{recursive:true});
+  await check('Nature stays open by keyboard and connect destinations to specific rooms and return conditions',async()=>{
+    await page.setViewportSize({width:1280,height:900});await go('destinations/ust-kamenogorsk');
+    assert.equal(await page.locator('.journey-card').count(),3);
+    assert.equal(await page.locator('.journey-card[open]').count(),0);
+    const ridder=page.locator('[data-journey="oskemen-journey-ridder"]');
+    await ridder.locator('summary').focus();await page.keyboard.press('Enter');assert.equal(await ridder.getAttribute('open'),'');
+    assert.equal(await ridder.locator('.journey-steps > li').count(),4);
+    assert.match(await ridder.innerText(),/чуть больше 5 км/);assert.match(await ridder.innerText(),/летнее размещение пока не подтверждено/);assert.match(await ridder.innerText(),/обратного трансфера/);
+    await ridder.locator('a[href="#/places/oskemen-ridder"]').click();await page.waitForURL(/#\/places\/oskemen-ridder$/);await page.locator('.page-heading h1').waitFor();assert.equal(await page.locator('.journey-card').count(),1);
+    assert.match(await page.locator('.journey-card summary').innerText(),/Риддер/);
+    await go('places/oskemen-berel');assert.equal(await page.locator('.journey-card').count(),1);await page.locator('.journey-card summary').click();
+    assert.match(await page.locator('.journey-stays').innerText(),/MUZ TAU/);assert.match(await page.locator('.journey-stays').innerText(),/три комнаты/);
+    await go('places/oskemen-strelka');assert.equal(await page.locator('.journey-card').count(),0);
+  });
+  await check('Nature stays preserve private access, room distinctions and independent Korean adaptation',async()=>{
+    await go('routes/ust-kamenogorsk');await page.locator('.journey-card summary').evaluateAll(nodes=>nodes.forEach(n=>n.parentElement.open=true));
+    const river=page.locator('[data-journey="oskemen-journey-ulbinka"]');
+    assert.match(await river.innerText(),/Территория частная/);assert.match(await river.innerText(),/последние 7 км/);assert.match(await river.innerText(),/зависит от тарифа/);
+    assert.equal(await river.locator('a[href^="#/places/"]').count(),0);
+    await page.locator('[data-language="ko"]').click();await page.locator('.journey-card summary').evaluateAll(nodes=>nodes.forEach(n=>n.parentElement.open=true));
+    assert.doesNotMatch(await page.locator('.nature-journeys').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    assert.match(await page.locator('[data-journey="oskemen-journey-katon"]').innerText(),/객실 내 샤워실과 화장실/);
+    await page.locator('[data-journey="oskemen-journey-katon"] a[href="#/places/oskemen-katon"]').click();await page.waitForURL(/#\/places\/oskemen-katon$/);await page.locator('.page-heading h1').waitFor();assert.match(await page.locator('h1').innerText(),/카톤카라가이/);
+    await page.locator('[data-language="ru"]').click();
+    await go('destinations/almaty');assert.equal(await page.locator('.nature-journeys').count(),0);
+  });
+  await check('Expanded nature stays fit small screens without leaking research or making hotel attraction pages',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('routes/ust-kamenogorsk');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});await page.locator('.journey-card summary').evaluateAll(nodes=>nodes.forEach(n=>n.parentElement.open=true));await noOverflow();}
+    }
+    const {oskemenContent}=await import('../assets/oskemen-data.js');assert.equal(oskemenContent.places.length,16);assert.equal(oskemenContent.journeys.length,3);
+    const raw=await (await context.request.get(base+'/assets/oskemen-data.js')).text();assert.doesNotMatch(raw,/sourceIds|internalGaps|roomEvidence|publicationReady|checkedAt|https?:\/\/|\/Users\//);
+    assert.deepEqual(failures,[]);await page.locator('[data-language="ru"]').click();
+  });
+  await page.setViewportSize({width:1280,height:900});await go('routes/ust-kamenogorsk');await page.locator('.journey-card').first().locator('summary').click();await page.screenshot({path:'test-results/oskemen-journeys-desktop.png'});
+  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/oskemen-journeys-mobile.png'});
   await page.setViewportSize({width:1280,height:900});await go('destinations/ust-kamenogorsk');await page.screenshot({path:'test-results/oskemen-desktop-viewport.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/oskemen-mobile-viewport.png'});
   await go('routes/ust-kamenogorsk');await page.locator('.itinerary-card').last().locator('summary').click();await page.screenshot({path:'test-results/oskemen-routes-mobile.png'});
