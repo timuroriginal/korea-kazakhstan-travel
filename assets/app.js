@@ -153,6 +153,12 @@ function render({focus=false}={}) {
   const cleanContent=mountContentExplorers(contentContext());
   mapCleanup=()=>{cleanMap();cleanContent();};
   if(focus){document.getElementById('content').focus({preventScroll:true});window.scrollTo(0,0);}
+  // A direct plan link opens the matching card without changing the hash router.
+  const requestedPlan=new URLSearchParams(location.hash.split('?')[1]||'').get('plan');
+  const planCard=currentRoute.startsWith('routes/')&&requestedPlan
+    ? [...app.querySelectorAll('[data-route-id]')].find(card=>card.dataset.routeId===requestedPlan)
+    : null;
+  if(planCard){planCard.open=true;if(focus)planCard.querySelector('summary')?.focus({preventScroll:true});planCard.scrollIntoView({block:'start',behavior:'auto'});}
 }
 function openVideo(key,title) {
   const item=media[key];
