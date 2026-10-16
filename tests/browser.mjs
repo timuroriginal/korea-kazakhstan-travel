@@ -126,7 +126,7 @@ try {
     await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent==='≈ 950 km',null,{polling:100});
     await p.locator('[data-map-choice="aktau"]').click();await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent.replace(/[^0-9]/g,'')==='1719',null,{polling:100});await c.close();
   });
-  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),id==='ust-kamenogorsk'?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
+  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),['almaty','ust-kamenogorsk'].includes(id)?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
   await check('Almaty to Kok-Tobe, language toggle preserves nested route',async()=>{await go('destinations/almaty');await page.locator('.place-card[href="#/places/kok-tobe"]').click();await page.locator('[data-gallery="0"]').waitFor();await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('html').getAttribute('lang'),'ru');assert.match(await page.locator('h1').innerText(),/Кок-Тобе/);assert.match(page.url(),/#\/places\/kok-tobe/);await page.reload();await page.locator('[data-gallery="0"]').waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'ru');});
   await check('Gallery and video dialog close on Escape and button',async()=>{await page.locator('[data-gallery="2"]').click();assert.match(await page.locator('#gallery-stage').innerText(),/Прогулка/);await page.locator('[data-gallery="3"]').click();await page.locator('#gallery-stage [data-video]').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);assert.match(await page.locator('dialog').innerText(),/Видео пока не загружено/);await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);await page.locator('#gallery-stage [data-video]').click();await page.locator('#dialog-close').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);});
   await check('Transport tabs support keyboard selection',async()=>{await page.locator('#tab-cable').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#tab-ground').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#panel-ground').isVisible(),true);await page.keyboard.press('Home');assert.equal(await page.locator('#panel-cable').isVisible(),true);});
@@ -150,6 +150,14 @@ try {
   await check('All 106 place pages preserve internal research without public source furniture',async()=>{
     const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,106);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
     for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.equal(['aktau','burabay','ust-kamenogorsk'].includes(p.destination)?p.sources.length===0:p.sources.length>0,true);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
+    // Audit rendered Almaty links, including local section targets and direct plans.
+    const {guideContent}=await import('../assets/content-pages.js');
+    const paths=new Set(['destinations','interests','routes','saved','about','prepare',...Object.keys(guideContent).flatMap(id=>['destinations/'+id,'routes/'+id]),...contentPlaces.map(p=>'places/'+p.id),...['entry','money','connection','transport','language','safety'].map(id=>'prepare/'+id)]);
+    for(const p of contentPlaces.filter(p=>p.destination==='almaty')){
+      await go('places/'+p.id);
+      const links=await page.locator('#content a[href]').evaluateAll(nodes=>nodes.map(a=>({href:a.getAttribute('href'),scroll:a.dataset.scroll,localExists:a.dataset.scroll?Boolean(document.getElementById(a.dataset.scroll)):a.getAttribute('href').startsWith('#')&&!a.getAttribute('href').startsWith('#/')?Boolean(document.getElementById(a.getAttribute('href').slice(1))):true})));
+      for(const link of links){assert.equal(link.localExists,true,p.id+': '+link.href);if(!link.href.startsWith('#/'))continue;const [path,query]=link.href.slice(2).split('?');assert.ok(paths.has(path)||path==='',p.id+': '+link.href);const target=new URLSearchParams(query||'').get('plan');if(target){assert.equal(path,'routes/almaty');assert.ok(guideContent.almaty.routes.some(r=>r.id===target),link.href);}}
+    }
     await go('places/almaty-zoo');await page.reload();await page.locator('h1').waitFor();assert.match(await page.locator('#practical').innerText(),/1 427|1427/);
   });
   await check('Restrictions and unknown prices do not become open or free promises',async()=>{
@@ -625,6 +633,38 @@ try {
       if(width===390)await card.screenshot({path:`test-results/lakes-pair-${lang}-mobile.png`});
       if(width===1280&&lang==='ru')await card.screenshot({path:'test-results/lakes-pair-desktop.png'});
       for(const id of ['almaty-kolsai','almaty-kaindy']){await go('places/'+id);const stay=page.locator('#stay details');await stay.evaluate(n=>n.open=false);await stay.locator('summary').focus();await page.keyboard.press('Enter');assert.equal(await stay.getAttribute('open'),'');await noOverflow();}
+    }
+    await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
+  });
+  await check('Almaty overview connects four visit types, realistic day budgets and optional lodging',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('destinations/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const hub=page.locator('[data-almaty-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),4);
+      assert.deepEqual(await hub.locator('[data-planning-choice] a').evaluateAll(nodes=>nodes.map(a=>a.getAttribute('href'))),['route-1d','route-3d','route-3d-charyn','route-3d-kolsai'].map(id=>'#/routes/almaty?plan='+id));
+      await hub.locator('[data-duration-options] summary').click();const body=await hub.innerText();assert.match(body,lang==='ru'?/Пять или шесть дней/:/5~6일/);assert.match(body,lang==='ru'?/без учёта ваших рейсов/:/항공편 시간은 반영하지/);assert.match(body,lang==='ru'?/Готовый перевозчик пока не подобран/:/운송편은 아직 선정되지/);assert.doesNotMatch(body,/[\u2013\u2014]|2ГИС|по отзывам|출처/);
+      await page.locator('[data-practical-id="practical-stay-center"] summary').click();assert.match(await page.locator('[data-practical-id="practical-stay-center"]').innerText(),lang==='ru'?/менять отель не обязательно/:/숙소를 옮길 필요는 없습니다/);
+      await hub.locator('[data-scroll="transport"]').click();assert.match(page.url(),/#\/destinations\/almaty$/);assert.ok(await page.locator('#transport').isVisible());
+    }
+  });
+  await check('Direct Almaty plans open on navigation, reload and language switch and link from eight places',async()=>{
+    const {guideContent}=await import('../assets/content-pages.js');
+    for(const choice of guideContent.almaty.planning.choices){
+      await go('destinations/almaty');if(await page.locator('html').getAttribute('lang')!=='ru')await page.locator('[data-language="ru"]').click();await page.locator(`[data-planning-choice="${choice.id}"] a`).click();
+      const card=page.locator(`[data-route-id="${choice.routeId}"]`);await page.locator(`[data-route-id="${choice.routeId}"][open]`).waitFor();assert.equal(await card.getAttribute('open'),'');assert.equal(await page.locator('.itinerary-card[open]').count(),1);assert.match(page.url(),new RegExp('plan='+choice.routeId));
+      await page.reload();await page.locator('h1').waitFor();assert.equal(await card.getAttribute('open'),'');
+      await page.locator('[data-language="ko"]').click();assert.equal(await card.getAttribute('open'),'');assert.match(page.url(),new RegExp('plan='+choice.routeId));await page.locator('[data-language="ru"]').click();
+    }
+    const linked=guideContent.almaty.places.filter(p=>p.planLink);assert.equal(linked.length,8);
+    for(const p of linked){await go('places/'+p.id);assert.equal(await page.locator('[data-place-plan]').getAttribute('href'),'#/routes/almaty?plan='+p.planLink.routeId);await page.locator('[data-place-plan]').click();await page.locator(`[data-route-id="${p.planLink.routeId}"][open]`).waitFor();assert.equal(await page.locator(`[data-route-id="${p.planLink.routeId}"]`).getAttribute('open'),'');}
+    await go('routes/almaty?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);assert.equal(await page.locator('.itinerary-card').count(),4);
+    await go('routes/astana?plan=route-1d');assert.equal(await page.locator('[data-almaty-planning]').count(),0);assert.doesNotMatch(await page.locator('h1').innerText(),/Алматы/);
+  });
+  await check('Almaty planning stays usable with keyboard and at mobile widths',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('destinations/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const hub=page.locator('[data-almaty-planning]');const summary=hub.locator('[data-duration-options] summary');await summary.focus();await page.keyboard.press('Enter');assert.equal(await hub.locator('[data-duration-options]').getAttribute('open'),'');await noOverflow();
+      if(width===390)await hub.screenshot({path:`test-results/almaty-cohesion-${lang}-mobile.png`});if(width===1280&&lang==='ru')await hub.screenshot({path:'test-results/almaty-cohesion-desktop.png'});
+      const first=hub.locator('[data-planning-choice="city"] a');await first.focus();await page.keyboard.press('Enter');await page.waitForURL(/plan=route-1d/);await page.locator('[data-route-id="route-1d"][open]').waitFor();await noOverflow();assert.equal(await page.locator('[data-route-id="route-1d"] > summary').evaluate(el=>el===document.activeElement),true);
     }
     await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
   });
