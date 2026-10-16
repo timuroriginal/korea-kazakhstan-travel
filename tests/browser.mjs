@@ -184,7 +184,7 @@ try {
   });
   await check('Almaty routes are linked sequences with separate third-day alternatives',async()=>{
     await go('routes/almaty');assert.equal(await page.locator('.itinerary-card').count(),4);await page.locator('.itinerary-card').last().locator('summary').click();
-    assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kolsai"]').count(),1);assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kaindy"]').count(),0);assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/\b\d\d:\d\d\b/);
+    assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kolsai"]').count(),1);assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kaindy"]').count(),0);assert.doesNotMatch((await page.locator('.itinerary-card:not(.itinerary-day-plan)').allTextContents()).join(' '),/\b\d\d:\d\d\b/);
   });
   await check('Nature filter includes resorts, lakes and hikes across Almaty',async()=>{
     await go('destinations/almaty');const all=page.locator('[data-place-group="all"]');
@@ -197,7 +197,7 @@ try {
   await check('Foreign visitor guidance avoids assuming language and local payment access',async()=>{
     await go('places/almaty-dostyk-plaza');assert.match(await page.locator('#overview').innerText(),/Zara/);assert.match(await page.locator('.address-box').innerText(),/111/);assert.match(await page.locator('.visit-guidance').innerText(),/Корейское обслуживание.*не подтвержден/);
     await go('places/almaty-esentai-mall');assert.match(await page.locator('#overview').innerText(),/Rolex/);assert.doesNotMatch(await page.locator('#overview').innerText(),/завершить.*кино|уточните|позвоните/);
-    await go('routes/almaty');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.match(await page.locator('.itinerary-grid').innerText(),/Спектакль не включён/);
+    await go('routes/almaty');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.itinerary-grid a[href="#/places/almaty-abai-theatre"]').count(),0);
     await go('destinations/almaty');await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.show-phrase button[data-copy="100 граммов, пожалуйста."]').count(),1);
     await page.locator('[data-language="ko"]').click();await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('#stay .show-phrase [lang="ru"]').count(),2);await page.locator('[data-language="ru"]').click();
   });
@@ -521,7 +521,7 @@ try {
       const address=card.locator('[data-copy]').first();assert.match(await address.getAttribute('data-copy'),/58А/);
       await address.click();await page.locator('#toast:not([hidden])').waitFor();
       await card.locator('a[href="#/prepare/transport"]').click();await page.locator('[data-transport-guide]').waitFor();
-      await go('destinations/almaty');assert.equal(await page.locator('#itinerary [data-day-plan]').count(),1);
+      await go('destinations/almaty');assert.equal(await page.locator('#itinerary [data-route-id="route-1d"] [data-day-plan]').count(),1);
     }
   });
   await check('Almaty first day disclosures fit mobile screens and open with the keyboard',async()=>{
@@ -531,6 +531,34 @@ try {
       await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
       if(width===390)await page.screenshot({path:`test-results/almaty-first-day-${lang}-mobile.png`,fullPage:true});
       if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/almaty-first-day-desktop.png',fullPage:true});
+    }
+    await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
+  });
+  await check('Mountain day separates Medeu station, full ticket, optional summit area and safe return planning',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const card=page.locator('[data-route-id="route-3d"]');await card.locator('summary').first().click();
+      assert.equal(await card.locator('[data-day-plan] .steps > li').count(),3);
+      assert.equal(await card.locator('a[href="#/places/almaty-medeu-sports-complex"]').count(),0);
+      await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+      const body=await card.innerText();assert.match(body,/3200|3,200/);assert.match(body,/12 000|12,000/);assert.match(body,/4 000|4,000/);assert.match(body,/15:00/);
+      assert.match(body,/2026/);assert.match(body,lang==='ru'?/[Сс] 19 октября по 1 ноября/:/10월 19일부터 11월 1일까지/);
+      assert.match(body,lang==='ru'?/не вершина|не.*вершина/:/산 정상/);assert.match(body,lang==='ru'?/ККД-4/:/KKD-4/);
+      assert.match(body,lang==='ru'?/Корейское меню.*не подтверждены/:/한국어 메뉴.*확인되지/);assert.match(body,lang==='ru'?/Ночёвка/:/숙박/);
+      assert.doesNotMatch(body,/[\u2013\u2014]|по отзывам|2ГИС|출처/);
+      const ticket=card.locator('button[data-copy*="Shymbulak Ticket"]');assert.equal(await ticket.count(),1);await ticket.click();await page.locator('#toast:not([hidden])').waitFor();
+      await go('places/almaty-shymbulak');const place=await page.locator('#content').innerText();assert.doesNotMatch(place,/технических работ до 18|18일까지 단계별 정비/);assert.match(place,/12 000|12,000/);assert.match(place,/Комби-2|콤비 2/);
+      assert.match(await page.locator('.address-box button').getAttribute('data-copy'),/Базовая станция/);
+    }
+  });
+  await check('Mountain day and place fit small screens and preserve first-day content',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const card=page.locator('[data-route-id="route-3d"]');await card.evaluate(n=>n.open=false);await card.locator('summary').first().focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.querySelector('[data-route-id="route-3d"]').open);
+      await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
+      if(width===390)await card.screenshot({path:`test-results/almaty-mountain-day-${lang}-mobile.png`});
+      if(width===1280&&lang==='ru')await card.screenshot({path:'test-results/almaty-mountain-day-desktop.png'});
+      await go('places/almaty-shymbulak');await noOverflow();
     }
     await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
   });
