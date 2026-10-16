@@ -61,3 +61,6 @@ footer{border-top:1px solid var(--line);background:white;padding:28px 0;color:va
 
 /* A complete walking day needs room for its sequence and practical choices. */
 .itinerary-day-plan{grid-column:1/-1}.day-plan{min-width:0}.day-plan>.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px;margin-top:24px}.day-plan>.steps>li{min-width:0}.day-plan>.steps p{font-size:14px;line-height:1.65;overflow-wrap:anywhere}.day-plan>.steps a{display:block}.day-plan .show-phrase p{overflow-wrap:anywhere}.day-plan .button{white-space:normal}@media(max-width:650px){.day-plan>.steps{grid-template-columns:1fr;gap:12px}}
+
+/* Two lake choices are alternatives, not three chronological stops. */
+.day-plan>.steps.steps-pair{grid-template-columns:repeat(2,minmax(0,1fr))}@media(max-width:650px){.day-plan>.steps.steps-pair{grid-template-columns:1fr}}
