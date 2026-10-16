@@ -1,3 +1,4 @@
+import { almatyFirstDayStops } from './almaty-first-day.js';
 import { guideContent as existingContent } from './content-data.js';
 import { astanaContent } from './astana-data.js';
 import { turkistanContent } from './turkistan-data.js';
@@ -6,7 +7,9 @@ import { burabayContent } from './burabay-data.js';
 import { oskemenContent } from './oskemen-data.js';
 import { destinations } from './catalog.js';
 import { applyVisitorUpdates } from './visitor-updates.js';
-export const guideContent=applyVisitorUpdates({...existingContent,astana:astanaContent,turkistan:turkistanContent,aktau:aktauContent,burabay:burabayContent,'ust-kamenogorsk':oskemenContent});
+const reviewedContent=applyVisitorUpdates({...existingContent,astana:astanaContent,turkistan:turkistanContent,aktau:aktauContent,burabay:burabayContent,'ust-kamenogorsk':oskemenContent});
+
+export const guideContent={...reviewedContent,almaty:{...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]}};
 
 export const contentPlaces=Object.values(guideContent).flatMap(d=>d.places);
 export const findContentPlace=id=>contentPlaces.find(p=>p.id===id);
@@ -53,6 +56,12 @@ function natureJourneys(data,ctx,placeId){
   return `<section class="section nature-journeys" id="journeys">${ctx.sectionTitle(t('숙박을 포함한 자연 여행','Отдых с ночёвкой'))}<p class="journeys-intro">${t('가고 싶은 풍경을 고른 뒤 활동과 숙박, 왕복 이동을 함께 살펴보세요. 각 구성에 실제 이용 조건을 담았습니다.','Выберите, ради каких пейзажей хочется поехать. В каждом варианте собраны занятия, ночёвка и дорога с условиями поездки.')}</p><div class="journey-list">${journeys.map(j=>`<details class="journey-card" data-journey="${esc(j.id)}"><summary><span class="eyebrow">${esc(tr(j.format))}</span><span class="journey-title" lang="${lang}">${esc(tr(j.title))}</span><span class="journey-tagline" lang="${lang}">${esc(tr(j.tagline))}</span><span class="journey-toggle">${t('여행 구성 보기','Как устроена поездка')} <span aria-hidden="true">↓</span></span></summary><div class="journey-body"><ol class="journey-steps"><li><h3>${t('여행의 이유','Ради чего ехать')}</h3>${paragraph(j.purpose)}</li><li><h3>${t('볼거리와 활동','Что посмотреть и чем заняться')}</h3>${paragraph(j.activities)}${j.placeIds.length?`<div class="journey-place-links">${j.placeIds.map(id=>{const p=findContentPlace(id);return `<a href="#/places/${esc(id)}">${esc(name(p))} →</a>`;}).join('')}</div>`:''}</li><li><h3>${t('머무를 곳','Где переночевать')}</h3><ul class="journey-stays">${j.stays.map(s=>`<li><h4>${esc(s.name)}</h4><p class="stay-room" lang="${lang}">${esc(tr(s.room))}</p>${paragraph(s.description)}</li>`).join('')}</ul></li><li><h3>${t('가는 길과 돌아오는 길','Как добраться и вернуться')}</h3><h4>${t('가는 길','Дорога туда')}</h4>${paragraph(j.transport)}<h4>${t('돌아오는 길','Возвращение')}</h4>${paragraph(j.returnTransport)}</li></ol><div class="notice journey-limits"><h4>${t('이용 조건','Условия поездки')}</h4>${paragraph(j.limits)}</div></div></details>`).join('')}</div></section>`;
 }
 
+function dayPlanMarkup(plan,ctx){
+  const {t,tr,esc,lang}=ctx,{name}=helpers(ctx);
+  const details=items=>items.map(item=>`<details class="guide-answer"><summary>${esc(tr(item.title))}</summary><div class="answer-body"><p lang="${lang}">${esc(tr(item.body))}</p></div></details>`).join('');
+  return `<div class="day-plan" data-day-plan><p lang="${lang}">${esc(tr(plan.intro))}</p><div class="fact-grid">${plan.facts.map(f=>`<div><strong>${esc(tr(f.label))}</strong><span>${esc(tr(f.value))}</span></div>`).join('')}</div><ol class="steps">${plan.stops.map(stop=>`<li><strong>${esc(tr(stop.period))}</strong><a href="#/places/${esc(stop.placeId)}">${esc(name(findContentPlace(stop.placeId)))}</a><span>${esc(tr(stop.time))}</span><p>${esc(tr(stop.note))}</p><p class="small muted">${esc(tr(stop.next))}</p></li>`).join('')}</ol><details class="guide-answer day-plan-food"><summary>${esc(tr(plan.food.title))}</summary><div class="answer-body"><p>${esc(tr(plan.food.body))}</p><p class="small muted">${esc(tr(plan.food.limits))}</p><p lang="ru">${esc(plan.food.address)}</p><button class="button" data-copy="${esc(plan.food.address)}">${t('주소 복사','Копировать адрес')}</button><div class="show-phrase"><p>${esc(tr(plan.food.meaning))}</p><p lang="ru">${esc(plan.food.phrase)}</p><button class="button" data-copy="${esc(plan.food.phrase)}">${t('주문 문구 복사','Копировать фразу для заказа')}</button></div></div></details>${details(plan.conditions)}<p><a href="#/prepare/transport">${t('택시 이용 안내','Как пользоваться такси')} →</a></p></div>`;
+}
+
 function itinerary(data,ctx){
   const {t,esc,tr,lang}=ctx,{name}=helpers(ctx);
   const groups=[...new Set(data.routes.map(r=>r.id))];
@@ -66,8 +75,8 @@ function itinerary(data,ctx){
     const stops=data.routes.filter(r=>r.id===id).sort((a,b)=>a.day-b.day||a.order-b.order);
     const first=stops[0],status=statusLabels[first.status];
     const stopLink=r=>{const p=findContentPlace(r.placeId);return `<a href="#/places/${esc(p.id)}">${esc(name(p))}</a>${r.optional?`<span class="small muted"> ${t('선택 방문','По желанию')}</span>`:''}`;};
-    const sequence=first.blocks?`<p lang="${lang}">${esc(tr(first.copy.note))}</p><ol class="route-blocks">${first.blocks.map(block=>`<li><h3>${esc(tr(block.title))}</h3>${block.placeIds.map(placeId=>stopLink(stops.find(r=>r.placeId===placeId))).join('<br>')}</li>`).join('')}</ol>`:`<ol>${stops.map(r=>`<li><span class="small muted">${t(`${r.day}일차`,`День ${r.day}`)}</span>${stopLink(r)}<p class="small" lang="${lang}">${esc(tr(r.copy.note))}</p></li>`).join('')}</ol>`;
-    return `<details class="itinerary-card"><summary><span class="eyebrow">${t(first.parent?'3일차 대안':'방문 순서',first.parent?'Вариант третьего дня':'Порядок посещения')}</span><span lang="${lang}">${esc(tr(first.copy.title))}</span>${status?`<span class="access-badge">${t(...status)}</span>`:''}</summary>${sequence}${first.copy.transport?`<div class="route-transport"><h3>${t('이동','Переезды')}</h3><p lang="${lang}">${esc(tr(first.copy.transport))}</p><h3>${t('귀환','Возвращение')}</h3><p lang="${lang}">${esc(tr(first.copy.returnTransport))}</p></div>`:''}</details>`;
+    const sequence=first.dayPlan?dayPlanMarkup(first.dayPlan,ctx):first.blocks?`<p lang="${lang}">${esc(tr(first.copy.note))}</p><ol class="route-blocks">${first.blocks.map(block=>`<li><h3>${esc(tr(block.title))}</h3>${block.placeIds.map(placeId=>stopLink(stops.find(r=>r.placeId===placeId))).join('<br>')}</li>`).join('')}</ol>`:`<ol>${stops.map(r=>`<li><span class="small muted">${t(`${r.day}일차`,`День ${r.day}`)}</span>${stopLink(r)}<p class="small" lang="${lang}">${esc(tr(r.copy.note))}</p></li>`).join('')}</ol>`;
+    return `<details class="itinerary-card${first.dayPlan?' itinerary-day-plan':''}" data-route-id="${esc(id)}"><summary><span class="eyebrow">${t(first.parent?'3일차 대안':'방문 순서',first.parent?'Вариант третьего дня':'Порядок посещения')}</span><span lang="${lang}">${esc(tr(first.copy.title))}</span>${status?`<span class="access-badge">${t(...status)}</span>`:''}</summary>${sequence}${first.copy.transport?`<div class="route-transport"><h3>${t('이동','Переезды')}</h3><p lang="${lang}">${esc(tr(first.copy.transport))}</p><h3>${t('귀환','Возвращение')}</h3><p lang="${lang}">${esc(tr(first.copy.returnTransport))}</p></div>`:''}</details>`;
   }).join('')}</div>`;
 }
 
