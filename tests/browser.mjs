@@ -562,6 +562,38 @@ try {
     }
     await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
   });
+  await check('Charyn day explains both walking options, a real return requirement and foreign-visitor limits',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const card=page.locator('[data-route-id="route-3d-charyn"]');await card.locator('summary').first().click();
+      assert.equal(await card.locator('.steps > li').count(),3);
+      assert.deepEqual(await card.locator('.steps > li > a').evaluateAll(nodes=>nodes.map(a=>a.getAttribute('href'))),Array(3).fill('#/places/almaty-charyn'));
+      await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+      const body=await card.innerText();assert.match(body,lang==='ru'?/шести километров/:/왕복 약 6km/);
+      assert.match(body,lang==='ru'?/развернуться раньше/:/중간에서 돌아/);assert.match(body,lang==='ru'?/лестниц/:/계단/);
+      assert.match(body,lang==='ru'?/не включены в план/:/포함하지 않/);assert.match(body,lang==='ru'?/Обычный|Односторонний/:/편도/);
+      assert.match(body,lang==='ru'?/Корейский гид.*не подтверждены/:/한국어 가이드.*확인되지/);
+      assert.match(body,lang==='ru'?/Кольсай и Каинды оставляем/:/콜사이와 카인디는 별도/);
+      assert.doesNotMatch(body,/[\u2013\u2014]|2ГИС|по отзывам|источники|출처/);
+      const copy=card.locator('button[data-copy*="Визит-центр Чарын"]');assert.equal(await copy.count(),1);assert.doesNotMatch(await copy.innerText(),/станции|승강장/);await copy.click();await page.locator('#toast:not([hidden])').waitFor();
+      await go('places/almaty-charyn');const place=await page.locator('#content').innerText();assert.match(place,lang==='ru'?/около трёх километров в одну сторону/:/편도 약 3km/);
+      assert.match(await page.locator('#transport').innerText(),lang==='ru'?/возвращени|Возвращение/:/귀환|복귀/);assert.match(await page.locator('.address-box button').getAttribute('data-copy'),/Визит-центр Чарын/);
+      assert.doesNotMatch(place,/2ч.45|346,2|Кыдырбаева/);
+      await go('destinations/almaty');assert.equal(await page.locator('#itinerary [data-route-id="route-3d-charyn"] [data-day-plan]').count(),1);
+    }
+  });
+  await check('Charyn disclosures work by keyboard and fit mobile screens without changing other Almaty days',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      assert.equal(await page.locator('.itinerary-card').count(),4);
+      const card=page.locator('[data-route-id="route-3d-charyn"]');await card.evaluate(n=>n.open=false);await card.locator('summary').first().focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.querySelector('[data-route-id="route-3d-charyn"]').open);
+      await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
+      if(width===390)await card.screenshot({path:`test-results/charyn-day-${lang}-mobile.png`});
+      if(width===1280&&lang==='ru')await card.screenshot({path:'test-results/charyn-day-desktop.png'});
+      await go('places/almaty-charyn');await noOverflow();
+    }
+    await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
+  });
   await page.setViewportSize({width:1280,height:900});await go('routes/ust-kamenogorsk');await page.locator('.journey-card').first().locator('summary').click();await page.screenshot({path:'test-results/oskemen-journeys-desktop.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/oskemen-journeys-mobile.png'});
   await page.setViewportSize({width:1280,height:900});await go('destinations/ust-kamenogorsk');await page.screenshot({path:'test-results/oskemen-desktop-viewport.png'});
