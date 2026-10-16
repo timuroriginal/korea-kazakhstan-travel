@@ -1,3 +1,4 @@
+import { applyCharynDay } from './charyn-day.js';
 import { applyAlmatyMountainDay } from './almaty-mountain-day.js';
 import { almatyFirstDayStops } from './almaty-first-day.js';
 import { guideContent as existingContent } from './content-data.js';
@@ -10,7 +11,7 @@ import { destinations } from './catalog.js';
 import { applyVisitorUpdates } from './visitor-updates.js';
 const reviewedContent=applyVisitorUpdates({...existingContent,astana:astanaContent,turkistan:turkistanContent,aktau:aktauContent,burabay:burabayContent,'ust-kamenogorsk':oskemenContent});
 
-export const guideContent={...reviewedContent,almaty:applyAlmatyMountainDay({...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]})};
+export const guideContent={...reviewedContent,almaty:applyCharynDay(applyAlmatyMountainDay({...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]}))};
 
 export const contentPlaces=Object.values(guideContent).flatMap(d=>d.places);
 export const findContentPlace=id=>contentPlaces.find(p=>p.id===id);
@@ -61,13 +62,14 @@ function dayPlanMarkup(plan,ctx){
   const {t,tr,esc,lang}=ctx,{name}=helpers(ctx);
   const phrase=item=>item.phrase?`<div class="show-phrase"><p>${esc(tr(item.meaning))}</p><p lang="ru">${esc(item.phrase)}</p><button class="button" data-copy="${esc(item.phrase)}">${t('문구 복사','Копировать фразу')}</button></div>`:'';
   const details=items=>items.map(item=>`<details class="guide-answer"><summary>${esc(tr(item.title))}</summary><div class="answer-body"><p lang="${lang}">${esc(tr(item.body))}</p>${phrase(item)}</div></details>`).join('');
-  return `<div class="day-plan" data-day-plan><p lang="${lang}">${esc(tr(plan.intro))}</p>${plan.notice?`<div class="notice mountain-season-notice">${esc(tr(plan.notice))}</div>`:''}<div class="fact-grid">${plan.facts.map(f=>`<div><strong>${esc(tr(f.label))}</strong><span>${esc(tr(f.value))}</span></div>`).join('')}</div><ol class="steps">${plan.stops.map(stop=>`<li><strong>${esc(tr(stop.period))}</strong><a href="#/places/${esc(stop.placeId)}">${esc(stop.label?tr(stop.label):name(findContentPlace(stop.placeId)))}</a><span>${esc(tr(stop.time))}</span><p>${esc(tr(stop.note))}</p><p class="small muted">${esc(tr(stop.next))}</p></li>`).join('')}</ol><details class="guide-answer day-plan-food"><summary>${esc(tr(plan.food.title))}</summary><div class="answer-body"><p>${esc(tr(plan.food.body))}</p><p class="small muted">${esc(tr(plan.food.limits))}</p>${plan.food.address?`<p lang="ru">${esc(plan.food.address)}</p><button class="button" data-copy="${esc(plan.food.address)}">${t('주소 복사','Копировать адрес')}</button>`:''}${phrase(plan.food)}</div></details>${details(plan.conditions)}${plan.searchName?`<div class="show-phrase"><p>${t('차량 목적지를 찾을 때 사용할 아래쪽 승강장 이름입니다.','Название нижней станции для поиска места назначения.')}</p><p lang="ru">${esc(plan.searchName)}</p><button class="button" data-copy="${esc(plan.searchName)}">${t('승강장 이름 복사','Копировать название станции')}</button></div>`:''}<p><a href="#/prepare/transport">${t('택시 이용 안내','Как пользоваться такси')} →</a></p></div>`;
+  return `<div class="day-plan" data-day-plan><p lang="${lang}">${esc(tr(plan.intro))}</p>${plan.notice?`<div class="notice mountain-season-notice">${esc(tr(plan.notice))}</div>`:''}<div class="fact-grid">${plan.facts.map(f=>`<div><strong>${esc(tr(f.label))}</strong><span>${esc(tr(f.value))}</span></div>`).join('')}</div><ol class="steps">${plan.stops.map(stop=>`<li><strong>${esc(tr(stop.period))}</strong><a href="#/places/${esc(stop.placeId)}">${esc(stop.label?tr(stop.label):name(findContentPlace(stop.placeId)))}</a><span>${esc(tr(stop.time))}</span><p>${esc(tr(stop.note))}</p><p class="small muted">${esc(tr(stop.next))}</p></li>`).join('')}</ol><details class="guide-answer day-plan-food"><summary>${esc(tr(plan.food.title))}</summary><div class="answer-body"><p>${esc(tr(plan.food.body))}</p><p class="small muted">${esc(tr(plan.food.limits))}</p>${plan.food.address?`<p lang="ru">${esc(plan.food.address)}</p><button class="button" data-copy="${esc(plan.food.address)}">${t('주소 복사','Копировать адрес')}</button>`:''}${phrase(plan.food)}</div></details>${details(plan.conditions)}${plan.searchName?`<div class="show-phrase"><p>${plan.searchLabel?esc(tr(plan.searchLabel)):t('차량 목적지를 찾을 때 사용할 아래쪽 승강장 이름입니다.','Название нижней станции для поиска места назначения.')}</p><p lang="ru">${esc(plan.searchName)}</p><button class="button" data-copy="${esc(plan.searchName)}">${plan.searchCopyLabel?esc(tr(plan.searchCopyLabel)):t('승강장 이름 복사','Копировать название станции')}</button></div>`:''}<p><a href="#/prepare/transport">${t('택시 이용 안내','Как пользоваться такси')} →</a></p></div>`;
 }
 
 function itinerary(data,ctx){
   const {t,esc,tr,lang}=ctx,{name}=helpers(ctx);
   const groups=[...new Set(data.routes.map(r=>r.id))];
   const statusLabels={
+    'roundtrip-needed':['왕복 차량 필요','Нужна машина туда и обратно'],
     'seasonal-lifts':['케이블카 운행 조건에 따라 방문','Зависит от работы канатных дорог'],
     'conditional-language':['한국어 동행 미확인','Корейское сопровождение не подтверждено'],
     'blocked-transport':['귀환 교통편 미준비','Обратный транспорт не подготовлен'],
