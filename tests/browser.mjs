@@ -217,7 +217,7 @@ try {
     assert.equal(await all.locator('[data-place-id^="almaty"]').count(),0);
     const nearby=page.locator('[data-place-group="nearby"]');assert.equal(await nearby.locator('.place-card').count(),3);
     assert.match(await nearby.locator('[data-place-id="astana-karlag"]').innerText(),/Дальний выезд/);
-    assert.equal(await page.locator('#transport details').count(),3);assert.equal(await page.locator('#stay details').count(),2);
+    assert.equal(await page.locator('#transport [data-practical-id]').count(),4);assert.equal(await page.locator('#stay details').count(),2);
   });
   await check('Astana places have correct breadcrumbs, unknown prices and no public source blocks',async()=>{
     const {contentPlaces}=await import('../assets/content-pages.js');
@@ -354,14 +354,14 @@ try {
     for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const route of ['destinations/burabay','places/burabay-bolektau','places/burabay-byrabai','routes/burabay']){await go(route);await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();}}
     const raw=await (await context.request.get(base+'/assets/burabay-data.js')).text();assert.doesNotMatch(raw,/sourceIds|internalGaps|provenance|checkedAt|https?:\/\/|\/Users\//);assert.deepEqual(failures,[]);
   });
-  await check('Oskemen has sixteen profiles, twelve conditions, nine practical topics and separate nearby filters',async()=>{
+  await check('Oskemen has sixteen profiles, twelve conditions, taxi-first topics and separate nearby filters',async()=>{
     await page.setViewportSize({width:1280,height:900});await go('destinations/ust-kamenogorsk');
     const all=page.locator('[data-place-group="all"]');assert.match(await all.locator('[data-place-count]').innerText(),/из 16/);
     assert.equal(await page.locator('.season-details details').count(),4);
     await all.locator('[data-place-more]').click();assert.equal(await all.locator('.place-card').count(),16);assert.equal(await all.locator('.access-badge').count(),12);
     await all.locator('[data-place-filter="culture"]').click();assert.equal(await all.locator('.place-card').count(),5);
     await all.locator('[data-place-search]').fill('этнодеревня');assert.equal(await all.locator('.place-card').count(),1);
-    assert.equal(await page.locator('#transport details').count(),7);assert.equal(await page.locator('#stay details').count(),2);
+    assert.equal(await page.locator('#transport [data-practical-id]').count(),8);assert.equal(await page.locator('#stay details').count(),2);
     const nearby=page.locator('[data-place-group="nearby"]');await nearby.locator('[data-place-more]').click();assert.equal(await nearby.locator('.place-card').count(),9);
     assert.equal(await nearby.locator('.place-card').filter({hasText:'Дальний выезд'}).count(),5);
     for(const id of ['oskemen-museum-kaisenov','oskemen-kiin-kerish','oskemen-rakhman']){await go('places/'+id);assert.match(await page.locator('h1').innerText(),/Страница не найдена/);}
@@ -429,6 +429,50 @@ try {
     const {oskemenContent}=await import('../assets/oskemen-data.js');assert.equal(oskemenContent.places.length,16);assert.equal(oskemenContent.journeys.length,3);
     const raw=await (await context.request.get(base+'/assets/oskemen-data.js')).text();assert.doesNotMatch(raw,/sourceIds|internalGaps|roomEvidence|publicationReady|checkedAt|https?:\/\/|\/Users\//);
     assert.deepEqual(failures,[]);await page.locator('[data-language="ru"]').click();
+  });
+  await check('Taxi-first airport advice works in both languages and public transport stays secondary',async()=>{
+    const ids=['almaty','astana','turkistan','aktau','ust-kamenogorsk'];
+    for(const lang of ['ru','ko'])for(const id of ids){
+      await go('destinations/'+id);if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const first=page.locator('#transport [data-practical-id]').first();await first.locator('summary').click();
+      assert.match(await first.innerText(),/Yandex Go/);
+      assert.match(await first.innerText(),lang==='ru'?/до подтверждения заказа/:/확정하기 전에/);
+      assert.match(await first.innerText(),lang==='ru'?/ожидание/:/유료 대기/);
+      assert.doesNotMatch(await first.innerText(),/в два|в три|фиксированная цена|고정 요금|두 배|세 배|[\u2013\u2014]/);
+      if(lang==='ko')assert.doesNotMatch(await first.innerText(),/[А-Яа-яЁё]/);
+      assert.ok((await page.locator('#transport .practical-answers > details').allTextContents()).some(s=>s.includes('inDrive')));
+      if(['almaty','astana'].includes(id)){
+        const alternative=page.locator('.transport-alternatives');assert.equal(await alternative.getAttribute('open'),null);
+        await alternative.locator('summary').first().click();assert.ok(await alternative.locator('[data-practical-id]').count()>=2);
+      }
+      await noOverflow();
+    }
+    await go('destinations/burabay');await page.locator('[data-language="ru"]').click();
+    const taxi=page.locator('[data-practical-id="visitor-taxi-burabay"]');await taxi.locator('summary').click();assert.match(await taxi.innerText(),/не означает/);assert.match(await page.locator('#transport').textContent(),/Щучинск/);
+  });
+  await check('Reviewed corrections retain real gaps without research narration or local-language negotiation',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('routes/ust-kamenogorsk');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const route=page.locator('.itinerary-card').last();await route.locator('summary').click();assert.match(await route.innerText(),/MUZ TAU/);
+      assert.doesNotMatch(await route.innerText(),/База, дорожная программа|숙박 거점과 도로 일정/);
+      assert.match(await route.innerText(),lang==='ru'?/возврат|Возвращение/:/복귀|귀환/);
+      for(const id of ['almaty-panfilov-park','almaty-green-bazaar','almaty-central-museum','almaty-museum-instruments','almaty-independence-monument','almaty-ak-bulak','almaty-pioneer']){
+        await go('places/'+id);assert.doesNotMatch(await page.locator('#content').innerText(),/Kazakhstan\.travel|Welcome\.kz|В источнике|В источниках|национального туристического портала|공식 사이트|출처/);
+      }
+      await go('places/almaty-museum-instruments');assert.match(await page.locator('#practical').innerText(),lang==='ru'?/график пока не подтверждён/:/운영 시간은 아직 확인되지/);
+      for(const id of ['almaty-charyn','almaty-kolsai','almaty-kaindy']){await go('places/'+id);assert.doesNotMatch(await page.locator('#transport').innerText(),/договоритесь|정하세요/);assert.match(await page.locator('#transport').innerText(),lang==='ru'?/возвращен/:/복귀/);}
+      for(const pageId of ['about','prepare/transport']){await go(pageId);assert.doesNotMatch(await page.locator('#content').innerText(),/источниками и датой|добавим официальные источники|출처와 날짜|[\u2013\u2014]/);}
+    }
+    await page.locator('[data-language="ru"]').click();
+  });
+  await check('Expanded airport advice and transport alternatives remain readable at 320 and 390 pixels',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390]){
+      await page.setViewportSize({width,height:844});await go('destinations/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      await page.locator('#transport details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
+    }
+    await page.locator('[data-language="ru"]').click();await page.locator('[data-scroll="transport"]').first().click();await page.screenshot({path:'test-results/taxi-first-mobile.png'});
+    await page.setViewportSize({width:1280,height:900});await go('destinations/almaty');await page.locator('[data-practical-id="practical-airport-taxi"] summary').click();await page.locator('[data-scroll="transport"]').first().click();await page.screenshot({path:'test-results/taxi-first-desktop.png'});
+    assert.deepEqual(failures,[]);
   });
   await page.setViewportSize({width:1280,height:900});await go('routes/ust-kamenogorsk');await page.locator('.journey-card').first().locator('summary').click();await page.screenshot({path:'test-results/oskemen-journeys-desktop.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/oskemen-journeys-mobile.png'});
