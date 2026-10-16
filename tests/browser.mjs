@@ -178,7 +178,7 @@ try {
     await go('destinations/almaty');assert.equal(await page.locator('#overview p').first().getAttribute('lang'),'ko');
     for(const section of ['transport','stay']){await page.locator(`#${section} details`).evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator(`#${section} .practical-answers`).evaluate(el=>{const clone=el.cloneNode(true);clone.querySelectorAll('[lang=ru]').forEach(n=>n.remove());return clone.innerText||clone.textContent}),/[А-Яа-яЁё]|[\u2013\u2014]/);}
     await page.locator('[data-place-group="all"] [data-place-search]').fill('카스테예프');assert.equal(await page.locator('[data-place-group="all"] .place-card').count(),1);
-    await go('routes/almaty');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    await go('routes/almaty');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').evaluate(el=>{const clone=el.cloneNode(true);clone.querySelectorAll('[lang=ru]').forEach(n=>n.remove());return clone.textContent}),/[А-Яа-яЁё]|[\u2013\u2014]/);
     for(const width of [320,390]){await page.setViewportSize({width,height:900});await noOverflow();await go('destinations/almaty');await noOverflow();}
     await page.locator('[data-language="ru"]').click();
   });
@@ -199,7 +199,7 @@ try {
     await go('places/almaty-esentai-mall');assert.match(await page.locator('#overview').innerText(),/Rolex/);assert.doesNotMatch(await page.locator('#overview').innerText(),/завершить.*кино|уточните|позвоните/);
     await go('routes/almaty');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.match(await page.locator('.itinerary-grid').innerText(),/Спектакль не включён/);
     await go('destinations/almaty');await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.show-phrase button[data-copy="100 граммов, пожалуйста."]').count(),1);
-    await page.locator('[data-language="ko"]').click();await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.show-phrase [lang="ru"]').count(),2);await page.locator('[data-language="ru"]').click();
+    await page.locator('[data-language="ko"]').click();await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('#stay .show-phrase [lang="ru"]').count(),2);await page.locator('[data-language="ru"]').click();
   });
   await check('Populated Almaty and long place names fit small screens',async()=>{
     for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const r of ['destinations/almaty','places/almaty-kasteev-museum','routes/almaty']){await go(r);await noOverflow();}}
@@ -504,6 +504,33 @@ try {
       await page.locator('[data-transport-guide] details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
       if(width===390)await page.screenshot({path:`test-results/transport-guide-${lang}-mobile.png`,fullPage:true});
       if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/transport-guide-desktop.png',fullPage:true});
+    }
+    await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
+  });
+  await check('Almaty first day is a compact walk with a meal, Monday alternative and return',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const card=page.locator('[data-route-id="route-1d"]');await card.locator('summary').first().click();
+      assert.deepEqual(await card.locator('.steps > li > a').evaluateAll(nodes=>nodes.map(a=>a.getAttribute('href'))),['#/places/almaty-panfilov-park','#/places/almaty-green-bazaar','#/places/almaty-arbat']);
+      assert.equal(await card.locator('a[href="#/places/kok-tobe"],a[href="#/places/almaty-central-museum"]').count(),0);
+      assert.equal(await card.locator('.fact-grid > div').count(),3);
+      await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+      const body=await card.innerText();assert.match(body,lang==='ru'?/Если это понедельник/:/월요일이라면/);
+      assert.match(body,lang==='ru'?/Возвращение/:/귀환/);assert.match(body,lang==='ru'?/Ночёвка/:/숙박/);assert.match(body,/NAVAT/);
+      assert.match(body,lang==='ru'?/не проверены/:/확인되지/);assert.doesNotMatch(body,/[\u2013\u2014]|2ГИС|по отзывам|источники|출처/);
+      const address=card.locator('[data-copy]').first();assert.match(await address.getAttribute('data-copy'),/58А/);
+      await address.click();await page.locator('#toast:not([hidden])').waitFor();
+      await card.locator('a[href="#/prepare/transport"]').click();await page.locator('[data-transport-guide]').waitFor();
+      await go('destinations/almaty');assert.equal(await page.locator('#itinerary [data-day-plan]').count(),1);
+    }
+  });
+  await check('Almaty first day disclosures fit mobile screens and open with the keyboard',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const card=page.locator('[data-route-id="route-1d"]');await card.evaluate(n=>n.open=false);await card.locator('summary').first().focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.querySelector('[data-route-id="route-1d"]').open);
+      await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
+      if(width===390)await page.screenshot({path:`test-results/almaty-first-day-${lang}-mobile.png`,fullPage:true});
+      if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/almaty-first-day-desktop.png',fullPage:true});
     }
     await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
   });
