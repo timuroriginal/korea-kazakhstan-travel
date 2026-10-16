@@ -182,9 +182,9 @@ try {
     for(const width of [320,390]){await page.setViewportSize({width,height:900});await noOverflow();await go('destinations/almaty');await noOverflow();}
     await page.locator('[data-language="ru"]').click();
   });
-  await check('Almaty routes are linked sequences with separate third-day alternatives',async()=>{
-    await go('routes/almaty');assert.equal(await page.locator('.itinerary-card').count(),4);await page.locator('.itinerary-card').last().locator('summary').click();
-    assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kolsai"]').count(),1);assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kaindy"]').count(),0);assert.doesNotMatch((await page.locator('.itinerary-card:not(.itinerary-day-plan)').allTextContents()).join(' '),/\b\d\d:\d\d\b/);
+  await check('Almaty retains four route groups with independent lake choices',async()=>{
+    await go('routes/almaty');assert.equal(await page.locator('.itinerary-card').count(),4);await page.locator('.itinerary-card').last().locator('summary').first().click();
+    assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kolsai"]').count(),1);assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kaindy"]').count(),1);assert.doesNotMatch((await page.locator('.itinerary-card:not(.itinerary-day-plan)').allTextContents()).join(' '),/\b\d\d:\d\d\b/);
   });
   await check('Nature filter includes resorts, lakes and hikes across Almaty',async()=>{
     await go('destinations/almaty');const all=page.locator('[data-place-group="all"]');
@@ -308,7 +308,7 @@ try {
     await go('places/aktau-bozzhyra');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);assert.match(await page.locator('#transport').innerText(),/Возвращение/);
     await go('places/aktau-rock-trail');assert.match(await page.locator('.page-heading').innerText(),/Сквозной проход/);
     await go('routes/aktau');assert.equal(await page.locator('.itinerary-card').count(),4);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
-    await page.locator('.itinerary-card').last().locator('summary').click();assert.equal(await page.locator('.itinerary-card').last().locator('li').nth(1).locator('.muted').first().innerText(),'День 2');
+    await page.locator('.itinerary-card').last().locator('summary').first().click();assert.equal(await page.locator('.itinerary-card').last().locator('li').nth(1).locator('.muted').first().innerText(),'День 2');
   });
   await check('Aktau Korean copy, search, routes and saved place remain usable',async()=>{
     await go('destinations/aktau');await page.locator('[data-language="ko"]').click();const all=page.locator('[data-place-group="all"]');
@@ -460,7 +460,7 @@ try {
         await go('places/'+id);assert.doesNotMatch(await page.locator('#content').innerText(),/Kazakhstan\.travel|Welcome\.kz|В источнике|В источниках|национального туристического портала|공식 사이트|출처/);
       }
       await go('places/almaty-museum-instruments');assert.match(await page.locator('#practical').innerText(),lang==='ru'?/график пока не подтверждён/:/운영 시간은 아직 확인되지/);
-      for(const id of ['almaty-charyn','almaty-kolsai','almaty-kaindy']){await go('places/'+id);assert.doesNotMatch(await page.locator('#transport').innerText(),/договоритесь|정하세요/);assert.match(await page.locator('#transport').innerText(),lang==='ru'?/возвращен/:/복귀/);}
+      for(const id of ['almaty-charyn','almaty-kolsai','almaty-kaindy']){await go('places/'+id);assert.doesNotMatch(await page.locator('#transport').innerText(),/договоритесь|정하세요/);assert.match(await page.locator('#transport').innerText(),lang==='ru'?/возвращен/i:/복귀/);}
       for(const pageId of ['about','prepare/transport']){await go(pageId);assert.doesNotMatch(await page.locator('#content').innerText(),/источниками и датой|добавим официальные источники|출처와 날짜|[\u2013\u2014]/);}
     }
     await page.locator('[data-language="ru"]').click();
@@ -594,11 +594,45 @@ try {
     }
     await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
   });
+  await check('Lake choices remain independent and offer overnight only as an option in both languages',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const card=page.locator('[data-route-id="route-3d-kolsai"]');await card.locator('summary').first().click();
+      assert.match(await card.locator('summary').first().innerText(),lang==='ru'?/Два самостоятельных направления/i:/각각 선택하는 두 여행지/);
+      assert.deepEqual(await card.locator('.steps > li > a').evaluateAll(nodes=>nodes.map(a=>a.getAttribute('href'))),['#/places/almaty-kolsai','#/places/almaty-kaindy']);
+      assert.equal(await card.locator('.steps-pair > li').count(),2);
+      await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+      const body=await card.innerText();assert.match(body,lang==='ru'?/а не обязательная последовательность/:/모두 가야 하는 코스가 아닙니다/);
+      assert.match(body,lang==='ru'?/собственной ванной/:/전용 욕실/);assert.match(body,lang==='ru'?/Номер не забронирован/:/예약되어 있지 않습니다/);
+      assert.match(body,lang==='ru'?/ни обязательный УАЗ/:/반드시 UAZ/);assert.match(body,lang==='ru'?/асфальтированную дорогу/:/아스팔트 도로/);
+      assert.match(body,lang==='ru'?/возвращение/:/귀환/);assert.match(body,lang==='ru'?/Купание запрещено/:/수영은 금지/);
+      assert.doesNotMatch(body,/[\u2013\u2014]|2ГИС|по отзывам|источники|출처/);
+      for(const id of ['almaty-kolsai','almaty-kaindy']){
+        await go('places/'+id);const stay=page.locator('#stay [data-stay-option]');assert.equal(await stay.count(),1);await stay.locator('summary').click();assert.match(await stay.innerText(),/Saty-Kolsay/);
+        assert.match(await page.locator('#transport').innerText(),lang==='ru'?/возвращени|Возвращение/:/귀환|복귀/);
+        assert.match(await page.locator('.address-box button').getAttribute('data-copy'),id==='almaty-kolsai'?/Нижнее Кольсайское/:/Озеро Каинды/);
+        assert.doesNotMatch(await page.locator('#overview').innerText(),/только на УАЗ|только внедорожник|반드시 UAZ/);
+      }
+      await go('destinations/almaty');assert.equal(await page.locator('#itinerary [data-route-id="route-3d-kolsai"] .steps-pair > li').count(),2);
+    }
+  });
+  await check('Lake options and both place pages fit mobile screens and support keyboard controls',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      assert.equal(await page.locator('.itinerary-card').count(),4);
+      const card=page.locator('[data-route-id="route-3d-kolsai"]');await card.evaluate(n=>n.open=false);await card.locator('summary').first().focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.querySelector('[data-route-id="route-3d-kolsai"]').open);
+      await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
+      if(width===390)await card.screenshot({path:`test-results/lakes-pair-${lang}-mobile.png`});
+      if(width===1280&&lang==='ru')await card.screenshot({path:'test-results/lakes-pair-desktop.png'});
+      for(const id of ['almaty-kolsai','almaty-kaindy']){await go('places/'+id);const stay=page.locator('#stay details');await stay.evaluate(n=>n.open=false);await stay.locator('summary').focus();await page.keyboard.press('Enter');assert.equal(await stay.getAttribute('open'),'');await noOverflow();}
+    }
+    await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
+  });
   await page.setViewportSize({width:1280,height:900});await go('routes/ust-kamenogorsk');await page.locator('.journey-card').first().locator('summary').click();await page.screenshot({path:'test-results/oskemen-journeys-desktop.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/oskemen-journeys-mobile.png'});
   await page.setViewportSize({width:1280,height:900});await go('destinations/ust-kamenogorsk');await page.screenshot({path:'test-results/oskemen-desktop-viewport.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/oskemen-mobile-viewport.png'});
-  await go('routes/ust-kamenogorsk');await page.locator('.itinerary-card').last().locator('summary').click();await page.screenshot({path:'test-results/oskemen-routes-mobile.png'});
+  await go('routes/ust-kamenogorsk');await page.locator('.itinerary-card').last().locator('summary').first().click();await page.screenshot({path:'test-results/oskemen-routes-mobile.png'});
   await page.setViewportSize({width:1280,height:900});await go('destinations/burabay');await page.screenshot({path:'test-results/burabay-desktop-viewport.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/burabay-mobile-viewport.png'});
   await go('routes/burabay');await page.locator('.itinerary-card').first().locator('summary').click();await page.screenshot({path:'test-results/burabay-routes-mobile.png'});
