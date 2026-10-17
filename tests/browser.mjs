@@ -206,8 +206,8 @@ try {
     await go('places/almaty-dostyk-plaza');assert.match(await page.locator('#overview').innerText(),/Zara/);assert.match(await page.locator('.address-box').innerText(),/111/);assert.match(await page.locator('.visit-guidance').innerText(),/Корейское обслуживание.*не подтвержден/);
     await go('places/almaty-esentai-mall');assert.match(await page.locator('#overview').innerText(),/Rolex/);assert.doesNotMatch(await page.locator('#overview').innerText(),/завершить.*кино|уточните|позвоните/);
     await go('routes/almaty');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.itinerary-grid a[href="#/places/almaty-abai-theatre"]').count(),0);
-    await go('destinations/almaty');await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.show-phrase button[data-copy="100 граммов, пожалуйста."]').count(),1);
-    await page.locator('[data-language="ko"]').click();await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('#stay .show-phrase [lang="ru"]').count(),2);await page.locator('[data-language="ru"]').click();
+    await go('destinations/almaty');await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('#stay .show-phrase').count(),0);assert.match(await page.locator('#stay').innerText(),/перевод.*камер/);
+    await page.locator('[data-language="ko"]').click();await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('#stay .show-phrase').count(),0);assert.match(await page.locator('#stay').innerText(),/카메라 번역/);await page.locator('[data-language="ru"]').click();
   });
   await check('Populated Almaty and long place names fit small screens',async()=>{
     for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const r of ['destinations/almaty','places/almaty-kasteev-museum','routes/almaty']){await go(r);await noOverflow();}}
@@ -291,8 +291,8 @@ try {
   await check('Turkistan Korean discovery, local food names and saved cards work',async()=>{
     await go('destinations/turkistan');await page.locator('[data-language="ko"]').click();
     const all=page.locator('[data-place-group="all"]');await all.locator('[data-place-search]').fill('산드크');assert.equal(await all.locator('.place-card').count(),1);
-    await go('places/turkistan-kerege');assert.match(await page.locator('.visit-facts').innerText(),/10%/);assert.equal(await page.locator('.show-phrase').count(),2);
-    assert.equal(await page.locator('.show-phrase button').first().getAttribute('data-copy'),'Манты с говядиной');
+    await go('places/turkistan-kerege');assert.match(await page.locator('.visit-facts').innerText(),/10%/);assert.equal(await page.locator('.dish-suggestions').count(),1);
+    assert.match(await page.locator('.dish-suggestions').innerText(),/Манты с говядиной|소고기 만트/);assert.equal(await page.locator('.dish-suggestions button').count(),0);
     await page.locator('[data-save="turkistan-kerege"]').click();await go('saved');assert.equal(await page.locator('a[href="#/places/turkistan-kerege"]').count(),1);
     await go('places/turkistan-kerege');await page.locator('[data-save="turkistan-kerege"]').click();
     await page.locator('[data-language="ru"]').click();
@@ -312,7 +312,7 @@ try {
     for(const id of ['dostar-beach','regional-museum','shopan-ata','sultan-epe']){await go('places/aktau-'+id);assert.match(await page.locator('h1').innerText(),/Страница не найдена/);}
   });
   await check('Aktau retains unknown admission, delivery price scope and return conditions',async()=>{
-    await go('places/aktau-jeti');assert.match(await page.locator('.visit-facts').innerText(),/доставки/);assert.equal(await page.locator('.show-phrase button').getAttribute('data-copy'),'Фишбармак');
+    await go('places/aktau-jeti');assert.match(await page.locator('.visit-facts').innerText(),/доставки/);assert.match(await page.locator('.dish-suggestions').innerText(),/Фишбармак с осетром|철갑상어 피시바르마크/);assert.equal(await page.locator('.dish-suggestions button').count(),0);
     await go('places/aktau-bozzhyra');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);assert.match(await page.locator('#transport').innerText(),/Возвращение/);
     await go('places/aktau-rock-trail');assert.match(await page.locator('.page-heading').innerText(),/Сквозной проход/);
     await go('routes/aktau');assert.equal(await page.locator('.itinerary-card').count(),4);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
@@ -345,7 +345,7 @@ try {
     await go('places/burabay-botai');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);assert.doesNotMatch(await page.locator('.visit-facts').innerText(),/500/);
     await go('places/burabay-baitas');assert.match(await page.locator('.page-heading').innerText(),/без проживания пока не подтверждён/);
     await go('places/burabay-ybyrai-trail');assert.match(await page.locator('.visit-facts').innerText(),/конечной точки/);assert.match(await page.locator('#transport').innerText(),/пока не установлен/);
-    await go('places/burabay-byrabai');assert.match(await page.locator('.visit-facts').innerText(),/средний чек/);assert.equal(await page.locator('.show-phrase button').first().getAttribute('data-copy'),'Манты');assert.match(await page.locator('.visit-facts').innerText(),/Оплата/);
+    await go('places/burabay-byrabai');assert.match(await page.locator('.visit-facts').innerText(),/средний чек/);assert.match(await page.locator('.dish-suggestions').innerText(),/Манты|만티/);assert.match(await page.locator('.visit-facts').innerText(),/Оплата/);
     await go('routes/burabay');assert.equal(await page.locator('.itinerary-card').count(),4);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
     await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.route-transport').count(),4);assert.match(await page.locator('.route-transport').last().innerText(),/Возвращение/);
     const last=page.locator('.itinerary-card').last();assert.equal(await last.locator('li').nth(2).locator('.muted').first().innerText(),'День 2');assert.equal(await last.locator('a[href*="ybyrai"]').count(),0);
@@ -376,8 +376,8 @@ try {
   });
   await check('Oskemen preserves unknown entry and QURT order names, payment and horsemeat details',async()=>{
     await go('places/oskemen-ethnopark');assert.match(await page.locator('.visit-facts').innerText(),/Вход/);assert.equal(await page.locator('.address-box button').count(),0);assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);
-    await go('places/oskemen-qurt');assert.equal(await page.locator('.address-box button').getAttribute('data-copy'),'Казахстан, 59Б');assert.equal(await page.locator('.show-phrase').count(),2);
-    assert.equal(await page.locator('.show-phrase button').first().getAttribute('data-copy'),'Манты с мясом конины');assert.match(await page.locator('.visit-facts').innerText(),/Международная карта отдельно не подтверждена/);assert.match(await page.locator('#overview').innerText(),/Конина/);
+    await go('places/oskemen-qurt');assert.equal(await page.locator('.address-box button').getAttribute('data-copy'),'Казахстан, 59Б');assert.equal(await page.locator('.dish-suggestions').count(),1);
+    assert.match(await page.locator('.dish-suggestions').innerText(),/Манты с кониной|말고기 만트/);assert.match(await page.locator('.visit-facts').innerText(),/Международная карта отдельно не подтверждена/);assert.match(await page.locator('#overview').innerText(),/Конина/);
     await go('places/oskemen-alps');assert.match(await page.locator('.visit-facts').innerText(),/неработающие/);
   });
   await check('Oskemen itineraries preserve access flags and separate arrival, visit and return',async()=>{
@@ -552,9 +552,9 @@ try {
       const body=await card.innerText();assert.match(body,/3200|3,200/);assert.match(body,/12 000|12,000/);assert.match(body,/4 000|4,000/);assert.match(body,/15:00/);
       assert.match(body,/2026/);assert.match(body,lang==='ru'?/[Сс] 19 октября по 1 ноября/:/10월 19일부터 11월 1일까지/);
       assert.match(body,lang==='ru'?/не вершина|не.*вершина/:/산 정상/);assert.match(body,lang==='ru'?/ККД-4/:/KKD-4/);
-      assert.match(body,lang==='ru'?/Корейское меню.*не подтверждены/:/한국어 메뉴.*확인되지/);assert.match(body,lang==='ru'?/Ночёвка/:/숙박/);
+      assert.match(body,lang==='ru'?/перевод.*камер/:/카메라 번역/);assert.match(body,lang==='ru'?/Ночёвка/:/숙박/);
       assert.doesNotMatch(body,/[\u2013\u2014]|по отзывам|2ГИС|출처/);
-      const ticket=card.locator('button[data-copy*="Shymbulak Ticket"]');assert.equal(await ticket.count(),1);await ticket.click();await page.locator('#toast:not([hidden])').waitFor();
+      assert.equal(await card.locator('button[data-copy*="Shymbulak Ticket"]').count(),0);assert.match(body,/Shymbulak Ticket/);
       await go('places/almaty-shymbulak');const place=await page.locator('#content').innerText();assert.doesNotMatch(place,/технических работ до 18|18일까지 단계별 정비/);assert.match(place,/12 000|12,000/);assert.match(place,/Комби-2|콤비 2/);
       assert.match(await page.locator('.address-box button').getAttribute('data-copy'),/Базовая станция/);
     }
@@ -688,5 +688,24 @@ try {
   await page.setViewportSize({width:390,height:844});await go('destinations/almaty');await page.screenshot({path:'test-results/almaty-mobile.png',fullPage:true});
   await page.setViewportSize({width:1280,height:900});await go('routes');await page.locator('#route-explorer').screenshot({path:'test-results/routes-map-desktop.png'});
   await page.setViewportSize({width:390,height:844});await go();await page.locator('#home-routes').screenshot({path:'test-results/home-map-mobile.png'});await go('routes');await page.locator('#route-explorer').screenshot({path:'test-results/routes-map-mobile.png'});
+  await check('Calm language help replaces dialogue scripts across six destinations in RU and KO',async()=>{
+    for(const lang of ['ru','ko']){
+      for(const city of ['almaty','astana','turkistan','aktau','burabay','ust-kamenogorsk']){
+        await go(`destinations/${city}`);if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+        await page.locator('#stay details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+        assert.equal(await page.locator('#stay .show-phrase').count(),0);assert.equal(await page.locator('#stay [data-language-help]').count(),1);
+        assert.doesNotMatch(await page.locator('#stay').innerText(),/Копировать фразу|문구 복사|100 граммов, пожалуйста|Какое мясо в этом блюде|готовая фраза/);
+      }
+      await go('routes/almaty');await page.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+      const body=await page.locator('#content').innerText();assert.doesNotMatch(body,/Вот это блюдо|Копировать фразу|문구 복사|아래 문구/);assert.match(body,/NAVAT/);assert.match(body,/Shymbulak Ticket/);
+      assert.equal(await page.locator('[data-route-id="route-1d"] button[data-copy*="58А"]').count(),1);
+      for(const id of ['turkistan-kerege','aktau-jeti','burabay-byrabai','oskemen-qurt']){
+        await go(`places/${id}`);assert.equal(await page.locator('.dish-suggestions').count(),1);assert.equal(await page.locator('.dish-suggestions button').count(),0);assert.equal(await page.locator('.address-box button[data-copy]').count(),1);assert.equal(await page.locator('[data-language-help]').count(),1);await noOverflow();
+      }
+    }
+    await go('routes/almaty?plan=route-1d');if(await page.locator('html').getAttribute('lang')!=='ru')await page.locator('[data-language="ru"]').click();
+    await page.locator('[data-route-id="route-1d"] details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await page.setViewportSize({width:390,height:844});await noOverflow();await page.screenshot({path:'test-results/calm-language-ru-mobile.png',fullPage:true});
+    await page.setViewportSize({width:1280,height:900});
+  });
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
