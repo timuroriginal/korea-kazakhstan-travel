@@ -126,7 +126,7 @@ try {
     await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent==='≈ 950 km',null,{polling:100});
     await p.locator('[data-map-choice="aktau"]').click();await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent.replace(/[^0-9]/g,'')==='1719',null,{polling:100});await c.close();
   });
-  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),['almaty','astana','ust-kamenogorsk'].includes(id)?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
+  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),['almaty','astana','turkistan','ust-kamenogorsk'].includes(id)?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
   await check('Almaty to Kok-Tobe, language toggle preserves nested route',async()=>{await go('destinations/almaty');await page.locator('.place-card[href="#/places/kok-tobe"]').click();await page.locator('[data-gallery="0"]').waitFor();await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('html').getAttribute('lang'),'ru');assert.match(await page.locator('h1').innerText(),/Кок-Тобе/);assert.match(page.url(),/#\/places\/kok-tobe/);await page.reload();await page.locator('[data-gallery="0"]').waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'ru');});
   await check('Gallery and video dialog close on Escape and button',async()=>{await page.locator('[data-gallery="2"]').click();assert.match(await page.locator('#gallery-stage').innerText(),/Прогулка/);await page.locator('[data-gallery="3"]').click();await page.locator('#gallery-stage [data-video]').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);assert.match(await page.locator('dialog').innerText(),/Видео пока не загружено/);await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);await page.locator('#gallery-stage [data-video]').click();await page.locator('#dialog-close').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);});
   await check('Transport tabs support keyboard selection',async()=>{await page.locator('#tab-cable').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#tab-ground').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#panel-ground').isVisible(),true);await page.keyboard.press('Home');assert.equal(await page.locator('#panel-cable').isVisible(),true);});
@@ -741,6 +741,33 @@ try {
       const link=hub.locator('[data-planning-choice="center"] a');await link.focus();await page.keyboard.press('Enter');await page.locator('[data-route-id="astana-one-day"][open]').waitFor();
       await page.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();assert.equal(await page.locator('[data-route-id="astana-one-day"] button[data-copy*="Конаев"]').count(),1);
       if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/astana-day-desktop.png'});
+    }
+    await page.setViewportSize({width:1280,height:900});assert.deepEqual(failures,[]);
+  });
+  await check('Turkistan separates the city day from two conditional outings in both languages',async()=>{
+    const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.turkistan;
+    assert.equal(d.places.length,9);assert.equal(new Set(d.routes.map(r=>r.id)).size,3);assert.equal(d.routes.filter(r=>r.dayPlan).length,1);
+    for(const lang of ['ru','ko']){
+      await go('destinations/turkistan');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const hub=page.locator('[data-turkistan-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),3);assert.equal(await hub.locator('a[href^="#/routes/turkistan?plan="]').count(),3);assert.equal(await hub.locator('a[href*="routes/almaty"]').count(),0);
+      await go('routes/turkistan?plan=turkistan-city-day');const card=page.locator('[data-route-id="turkistan-city-day"][open]');await card.waitFor();await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+      const body=await card.innerText();assert.match(body,/Kerege|케레게/);assert.match(body,/10%/);assert.match(body,lang==='ru'?/понедельник/:/월요일/);assert.match(body,lang==='ru'?/отдых|отдох|Отдых/:/휴식|쉬고/);assert.doesNotMatch(body,/Копировать фразу|문구 복사|[\u2013\u2014]/);
+      assert.equal(await card.locator('button[data-copy*="25а"]').count(),1);assert.equal(await card.locator('a[href="#/places/turkistan-kerege"]').count(),1);assert.equal(await card.locator('a[href="#/places/turkistan-yasawi-museum"]').count(),1);
+      for(const id of ['turkistan-sauran-outing','turkistan-otrar-outing']){const far=page.locator(`[data-route-id="${id}"]`);await far.locator('summary').first().click();assert.match(await far.innerText(),lang==='ru'?/Вход и обратный транспорт не подготовлены/:/입장 조건과 귀환 차량 미준비/);assert.match(await far.innerText(),lang==='ru'?/Возвращение/:/귀환/);assert.equal(await far.locator('[data-day-plan]').count(),0);}
+    }
+  });
+  await check('Turkistan choices and eight place links preserve selected plan through reload and language change',async()=>{
+    const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.turkistan;
+    for(const c of d.planning.choices){await go('destinations/turkistan');await page.locator(`[data-turkistan-planning] [data-planning-choice="${c.id}"] a`).click();const card=page.locator(`[data-route-id="${c.routeId}"][open]`);await card.waitFor();await page.reload();await card.waitFor();const lang=await page.locator('html').getAttribute('lang');await page.locator(`[data-language="${lang==='ru'?'ko':'ru'}"]`).click();await card.waitFor();}
+    for(const p of d.places.filter(p=>p.planLink)){await go('places/'+p.id);await page.locator('[data-place-plan]').click();await page.locator(`[data-route-id="${p.planLink.routeId}"][open]`).waitFor();}
+    assert.equal(d.places.filter(p=>p.planLink).length,8);await go('routes/turkistan?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);
+    await go('places/turkistan-sandyq');assert.equal(await page.locator('[data-place-plan]').count(),0);assert.equal(await page.locator('.address-box button').count(),0);
+  });
+  await check('Turkistan plans fit mobile screens and open using the keyboard',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('destinations/turkistan');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const hub=page.locator('[data-turkistan-planning]');await noOverflow();
+      if(width===390)await hub.screenshot({path:`test-results/turkistan-planning-${lang}-mobile.png`});const link=hub.locator('[data-planning-choice="city"] a');await link.focus();await page.keyboard.press('Enter');await page.locator('[data-route-id="turkistan-city-day"][open]').waitFor();await page.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
+      if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/turkistan-day-desktop.png'});
     }
     await page.setViewportSize({width:1280,height:900});assert.deepEqual(failures,[]);
   });
