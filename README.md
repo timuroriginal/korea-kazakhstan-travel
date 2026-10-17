@@ -196,3 +196,7 @@ All six destinations use short RU/KO communication tips instead of scripted rest
 ## Astana connected city days, 17 October 2026
 
 Four bilingual city plans now connect the overview to stops, food options, seasonal alternatives and a return to the same accommodation. Fourteen place pages open the relevant plan directly. ALZHIR and Korgalzhyn remain conditional separate outings; no carrier or Korean guiding service is promised. Existing 18 Astana profiles, 106 total places and other destination content are preserved. 77 browser checks passed.
+
+## Turkistan connected visits, 17 October 2026
+
+A bilingual city day connects the Yasawi mausoleum, optional Khilvet, a rest break, Karavansaray and Kerege. Sauran and Otrar remain separate conditional outings with explicit entry and return-transport gaps. Eight place pages open the matching plan. The separate Yasawi museum is distinguished from the mausoleum, including its Monday closure. All 106 profiles and other destination content are preserved. 80 browser checks passed.
