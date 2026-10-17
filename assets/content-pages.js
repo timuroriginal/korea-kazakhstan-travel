@@ -1,3 +1,4 @@
+import { applyTurkistanPlans } from './turkistan-plans.js';
 import { applyAstanaPlans } from './astana-plans.js';
 import { applyAlmatyCohesion } from './almaty-cohesion.js';
 import { applyLakeVisits } from './lakes-pair.js';
@@ -14,7 +15,7 @@ import { destinations } from './catalog.js';
 import { applyVisitorUpdates } from './visitor-updates.js';
 const reviewedContent=applyVisitorUpdates({...existingContent,astana:astanaContent,turkistan:turkistanContent,aktau:aktauContent,burabay:burabayContent,'ust-kamenogorsk':oskemenContent});
 
-export const guideContent={...reviewedContent,astana:applyAstanaPlans(reviewedContent.astana),almaty:applyAlmatyCohesion(applyLakeVisits(applyCharynDay(applyAlmatyMountainDay({...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]}))))};
+export const guideContent={...reviewedContent,turkistan:applyTurkistanPlans(reviewedContent.turkistan),astana:applyAstanaPlans(reviewedContent.astana),almaty:applyAlmatyCohesion(applyLakeVisits(applyCharynDay(applyAlmatyMountainDay({...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]}))))};
 
 export const contentPlaces=Object.values(guideContent).flatMap(d=>d.places);
 export const findContentPlace=id=>contentPlaces.find(p=>p.id===id);
@@ -42,7 +43,7 @@ function explorer(data,group,ctx){
 function planningMarkup(data,ctx){
   if(!data.planning)return '';
   const {t,tr,esc}=ctx,plan=data.planning,destination=data.places[0].destination;
-  return `<section class="section" id="planning" data-destination-planning="${esc(destination)}" ${destination==='almaty'?'data-almaty-planning':'data-astana-planning'}>${ctx.sectionTitle(esc(tr(plan.title)))}<p>${esc(tr(plan.intro))}</p><div class="place-grid">${plan.choices.map(c=>`<article class="practical-card" data-planning-choice="${esc(c.id)}"><span class="access-badge">${esc(tr(c.status))}</span><h3>${esc(tr(c.title))}</h3><p>${esc(tr(c.body))}</p><a href="#/routes/${esc(destination)}?plan=${esc(encodeURIComponent(c.routeId))}">${esc(tr(c.action))} →</a></article>`).join('')}</div><details class="guide-answer overview-more" data-duration-options><summary>${esc(tr(plan.durationTitle))}</summary><div class="answer-body">${plan.durations.map(d=>`<h3>${esc(tr(d.title))}</h3><p>${esc(tr(d.body))}</p>`).join('')}<p class="small muted">${esc(tr(plan.durationNote))}</p></div></details><p class="small muted">${esc(tr(plan.catalogueNote))}</p><div class="related-row"><a href="#transport" data-scroll="transport">${t('도착과 시내 이동','Прибытие и городское такси')} →</a><a href="#stay" data-scroll="stay">${t('숙박 지역과 음식','Районы проживания и еда')} →</a></div></section>`;
+  return `<section class="section" id="planning" data-destination-planning="${esc(destination)}" ${['almaty','astana','turkistan'].includes(destination)?'data-'+esc(destination)+'-planning':''}>${ctx.sectionTitle(esc(tr(plan.title)))}<p>${esc(tr(plan.intro))}</p><div class="place-grid">${plan.choices.map(c=>`<article class="practical-card" data-planning-choice="${esc(c.id)}"><span class="access-badge">${esc(tr(c.status))}</span><h3>${esc(tr(c.title))}</h3><p>${esc(tr(c.body))}</p><a href="#/routes/${esc(destination)}?plan=${esc(encodeURIComponent(c.routeId))}">${esc(tr(c.action))} →</a></article>`).join('')}</div><details class="guide-answer overview-more" data-duration-options><summary>${esc(tr(plan.durationTitle))}</summary><div class="answer-body">${plan.durations.map(d=>`<h3>${esc(tr(d.title))}</h3><p>${esc(tr(d.body))}</p>`).join('')}<p class="small muted">${esc(tr(plan.durationNote))}</p></div></details><p class="small muted">${esc(tr(plan.catalogueNote))}</p><div class="related-row"><a href="#transport" data-scroll="transport">${t('도착과 시내 이동','Прибытие и городское такси')} →</a><a href="#stay" data-scroll="stay">${t('숙박 지역과 음식','Районы проживания и еда')} →</a></div></section>`;
 }
 
 function seasonDetails(data,ctx){
@@ -88,6 +89,7 @@ function itinerary(data,ctx){
     'conditional-language':['한국어 동행 미확인','Корейское сопровождение не подтверждено'],
     'blocked-transport':['귀환 교통편 미준비','Обратный транспорт не подготовлен'],
     'blocked-entry':['입구와 방문 조건 미확인','Вход и условия посещения не подтверждены'],
+    'blocked-entry-and-transport':['입장 조건과 귀환 차량 미준비','Вход и обратный транспорт не подготовлены'],
     'blocked-permit-and-transport':['출입 조건과 교통편 미확인','Допуски и транспорт не подтверждены']
   };
   return `<div class="notice">${data.itineraryNote?esc(tr(data.itineraryNote)):t('동선 초안입니다. 이동 시간과 방문 조건을 확인한 뒤 확정합니다.','Это варианты последовательности, а не готовое расписание. Переезды и условия посещения ещё проверяются.')}</div><div class="itinerary-grid">${groups.map(id=>{
