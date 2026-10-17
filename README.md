@@ -192,3 +192,7 @@ Validation for this update is recorded after the complete browser run in the loc
 ## Calm communication guidance, 17 October 2026
 
 All six destinations use short RU/KO communication tips instead of scripted restaurant or ticket-counter dialogue. Dish descriptions and address/station copy actions remain. Existing verified English menus are retained without assuming English-speaking staff or visitors. Almaty editorial input is updated so reimport preserves this decision. 74 browser acceptance checks passed, including all-six-destination language guidance and retained menu, ticket and address facts.
+
+## Astana connected city days, 17 October 2026
+
+Four bilingual city plans now connect the overview to stops, food options, seasonal alternatives and a return to the same accommodation. Fourteen place pages open the relevant plan directly. ALZHIR and Korgalzhyn remain conditional separate outings; no carrier or Korean guiding service is promised. Existing 18 Astana profiles, 106 total places and other destination content are preserved. 77 browser checks passed.
