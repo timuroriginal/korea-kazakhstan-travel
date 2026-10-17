@@ -188,3 +188,7 @@ Haversine на сфере со средним радиусом 6371.0088 км; �
 The Charyn third-day alternative now has a standalone Russian/Korean day plan. It distinguishes upper viewpoints from the roughly six-kilometre return walk to the river with stairs. The driver must wait and return to Almaty; no app pickup at the canyon or verified Korean booking path is promised. The visitor centre, meal fallback, weather, separate fee components and optional shorter walk are covered. No private-car descent, swimming, guaranteed internal shuttle, current fixed admission fee or local-bank access is implied. The individual Charyn profile agrees with this plan. First city day, mountain day, Kolsai alternative and all 106 place identities are preserved. Shared search-name labels are optional and keep the mountain station labels intact.
 
 Validation for this update is recorded after the complete browser run in the local project handoff. Research evidence and publication checkpoints remain outside the public site.
+
+## Calm communication guidance, 17 October 2026
+
+All six destinations use short RU/KO communication tips instead of scripted restaurant or ticket-counter dialogue. Dish descriptions and address/station copy actions remain. Existing verified English menus are retained without assuming English-speaking staff or visitors. Almaty editorial input is updated so reimport preserves this decision. 74 browser acceptance checks passed, including all-six-destination language guidance and retained menu, ticket and address facts.
