@@ -126,7 +126,7 @@ try {
     await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent==='≈ 950 km',null,{polling:100});
     await p.locator('[data-map-choice="aktau"]').click();await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent.replace(/[^0-9]/g,'')==='1719',null,{polling:100});await c.close();
   });
-  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),['almaty','ust-kamenogorsk'].includes(id)?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
+  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),['almaty','astana','ust-kamenogorsk'].includes(id)?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
   await check('Almaty to Kok-Tobe, language toggle preserves nested route',async()=>{await go('destinations/almaty');await page.locator('.place-card[href="#/places/kok-tobe"]').click();await page.locator('[data-gallery="0"]').waitFor();await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('html').getAttribute('lang'),'ru');assert.match(await page.locator('h1').innerText(),/Кок-Тобе/);assert.match(page.url(),/#\/places\/kok-tobe/);await page.reload();await page.locator('[data-gallery="0"]').waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'ru');});
   await check('Gallery and video dialog close on Escape and button',async()=>{await page.locator('[data-gallery="2"]').click();assert.match(await page.locator('#gallery-stage').innerText(),/Прогулка/);await page.locator('[data-gallery="3"]').click();await page.locator('#gallery-stage [data-video]').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);assert.match(await page.locator('dialog').innerText(),/Видео пока не загружено/);await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);await page.locator('#gallery-stage [data-video]').click();await page.locator('#dialog-close').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);});
   await check('Transport tabs support keyboard selection',async()=>{await page.locator('#tab-cable').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#tab-ground').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#panel-ground').isVisible(),true);await page.keyboard.press('Home');assert.equal(await page.locator('#panel-cable').isVisible(),true);});
@@ -248,7 +248,7 @@ try {
     await go('routes/astana');assert.equal(await page.locator('.itinerary-card').count(),6);
     await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
     assert.equal(await page.locator('.itinerary-card a[href^="#/places/almaty"]').count(),0);
-    assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    assert.doesNotMatch(await page.locator('.itinerary-grid').evaluate(el=>{const copy=el.cloneNode(true);copy.querySelectorAll('[lang="ru"]').forEach(n=>n.remove());return copy.textContent;}),/[А-Яа-яЁё]|[\u2013\u2014]/);
     await go('places/astana-baiterek');await page.locator('[data-save="astana-baiterek"]').click();await go('saved');
     assert.equal(await page.locator('a[href="#/places/astana-baiterek"]').count(),1);
     await page.locator('a[href="#/places/astana-baiterek"]').click();await page.locator('[data-save="astana-baiterek"]').click();
@@ -322,7 +322,7 @@ try {
     await go('destinations/aktau');await page.locator('[data-language="ko"]').click();const all=page.locator('[data-place-group="all"]');
     await all.locator('[data-place-search]').fill('제티');assert.equal(await all.locator('.place-card').count(),1);
     await page.locator('.season-details details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
-    await go('routes/aktau');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    await go('routes/aktau');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').evaluate(el=>{const copy=el.cloneNode(true);copy.querySelectorAll('[lang="ru"]').forEach(n=>n.remove());return copy.textContent;}),/[А-Яа-яЁё]|[\u2013\u2014]/);
     await go('places/aktau-jeti');await page.locator('[data-save="aktau-jeti"]').click();await go('saved');assert.equal(await page.locator('a[href="#/places/aktau-jeti"]').count(),1);
     await go('places/aktau-jeti');await page.locator('[data-save="aktau-jeti"]').click();await page.locator('[data-language="ru"]').click();
   });
@@ -355,7 +355,7 @@ try {
     const all=page.locator('[data-place-group="all"]');await all.locator('[data-place-search]').fill('줌박타스');assert.equal(await all.locator('.place-card').count(),1);
     await page.locator('.season-details details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
     for(const section of ['transport','stay']){await page.locator(`#${section} details`).evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator(`#${section} .practical-answers`).innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);}
-    await go('routes/burabay');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    await go('routes/burabay');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').evaluate(el=>{const copy=el.cloneNode(true);copy.querySelectorAll('[lang="ru"]').forEach(n=>n.remove());return copy.textContent;}),/[А-Яа-яЁё]|[\u2013\u2014]/);
     await go('places/burabay-byrabai');await page.locator('[data-save="burabay-byrabai"]').click();await go('saved');assert.equal(await page.locator('a[href="#/places/burabay-byrabai"]').count(),1);await go('places/burabay-byrabai');await page.locator('[data-save="burabay-byrabai"]').click();await page.locator('[data-language="ru"]').click();
   });
   await check('Burabay fits mobile and its public module contains no research registry',async()=>{
@@ -394,7 +394,7 @@ try {
       await go('places/'+p.id);assert.equal(await page.locator('h1').innerText(),p.name.ko);assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
       assert.doesNotMatch(await page.locator('.visit-guidance').innerText(),/[А-Яа-яЁё]/);assert.equal(await page.locator('.breadcrumbs a[href="#/destinations/ust-kamenogorsk"]').count(),1);
     }
-    await go('routes/ust-kamenogorsk');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
+    await go('routes/ust-kamenogorsk');await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.doesNotMatch(await page.locator('.itinerary-grid').evaluate(el=>{const copy=el.cloneNode(true);copy.querySelectorAll('[lang="ru"]').forEach(n=>n.remove());return copy.textContent;}),/[А-Яа-яЁё]|[\u2013\u2014]/);
     await go('places/oskemen-qurt');await page.locator('[data-save="oskemen-qurt"]').click();await go('saved');assert.equal(await page.locator('a[href="#/places/oskemen-qurt"]').count(),1);
     await go('places/oskemen-qurt');await page.locator('[data-save="oskemen-qurt"]').click();await page.locator('[data-language="ru"]').click();
   });
@@ -706,6 +706,43 @@ try {
     await go('routes/almaty?plan=route-1d');if(await page.locator('html').getAttribute('lang')!=='ru')await page.locator('[data-language="ru"]').click();
     await page.locator('[data-route-id="route-1d"] details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await page.setViewportSize({width:390,height:844});await noOverflow();await page.screenshot({path:'test-results/calm-language-ru-mobile.png',fullPage:true});
     await page.setViewportSize({width:1280,height:900});
+  });
+  await check('Astana overview links four distinct city days and keeps distant visits conditional',async()=>{
+    const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.astana;
+    assert.equal(d.places.length,18);assert.equal(new Set(d.routes.map(r=>r.id)).size,6);assert.equal(d.routes.filter(r=>r.dayPlan).length,4);
+    for(const lang of ['ru','ko']){
+      await go('destinations/astana');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const hub=page.locator('[data-astana-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),4);
+      assert.equal(await hub.locator('a[href^="#/routes/astana?plan="]').count(),4);assert.equal(await hub.locator('a[href^="#/routes/almaty"]').count(),0);
+      await hub.locator('[data-duration-options] summary').click();assert.match(await hub.innerText(),lang==='ru'?/Два дня/:/2일/);
+      await go('routes/astana');assert.equal(await page.locator('.itinerary-day-plan').count(),4);await page.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+      assert.match(await page.locator('[data-route-id="astana-third-alzhir"]').innerText(),lang==='ru'?/Обратный транспорт не подготовлен/:/귀환 교통편 미준비/);
+      assert.match(await page.locator('[data-route-id="astana-third-nature"]').innerText(),lang==='ru'?/Допуски и транспорт не подтверждены/:/출입 조건과 교통편 미확인/);
+      assert.match(await page.locator('[data-route-id="astana-second-day"]').innerText(),lang==='ru'?/понедельник/:/월요일/);
+      assert.equal(await page.locator('[data-route-id="astana-south-option"] .steps a[href="#/places/astana-singularity"]').count(),0);
+      assert.equal(await page.locator('[data-route-id="astana-south-option"] .steps a[href="#/places/astana-grand-mosque"]').count(),0);
+      assert.doesNotMatch(await page.locator('.itinerary-grid').innerText(),/Копировать фразу|문구 복사|[\u2013\u2014]/);
+    }
+  });
+  await check('Astana choices open the exact plan through reload, language switch and all linked places',async()=>{
+    const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.astana;
+    for(const c of d.planning.choices){
+      await go('destinations/astana');if(await page.locator('html').getAttribute('lang')!=='ru')await page.locator('[data-language="ru"]').click();
+      await page.locator(`[data-astana-planning] [data-planning-choice="${c.id}"] a`).click();const card=page.locator(`[data-route-id="${c.routeId}"][open]`);await card.waitFor();
+      await page.reload();await card.waitFor();await page.locator('[data-language="ko"]').click();await card.waitFor();assert.match(page.url(),new RegExp('plan='+c.routeId));
+    }
+    for(const p of d.places.filter(p=>p.planLink)){await go('places/'+p.id);await page.locator('[data-place-plan]').click();await page.locator(`[data-route-id="${p.planLink.routeId}"][open]`).waitFor();}
+    assert.equal(d.places.filter(p=>p.planLink).length,14);await go('routes/astana?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);
+  });
+  await check('Astana day cards work on mobile and by keyboard in both languages',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('destinations/astana');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await noOverflow();
+      const hub=page.locator('[data-astana-planning]');if(width===390)await hub.screenshot({path:`test-results/astana-planning-${lang}-mobile.png`});
+      const link=hub.locator('[data-planning-choice="center"] a');await link.focus();await page.keyboard.press('Enter');await page.locator('[data-route-id="astana-one-day"][open]').waitFor();
+      await page.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();assert.equal(await page.locator('[data-route-id="astana-one-day"] button[data-copy*="Конаев"]').count(),1);
+      if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/astana-day-desktop.png'});
+    }
+    await page.setViewportSize({width:1280,height:900});assert.deepEqual(failures,[]);
   });
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
