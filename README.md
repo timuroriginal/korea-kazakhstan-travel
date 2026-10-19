@@ -208,3 +208,7 @@ Four bilingual choices separate a coastal city day with optional Jeti from the n
 ## Burabay connected visits, 19 October 2026
 
 Four bilingual choices separate a short first evening, Blue Bay shore views, conditional Bolektau ascent and a two-day stay. Seven place pages open matching plans. A specific BAITAS STANDARD TWIN room is described as an optional accommodation example with a private shower and bathroom, without verified availability, foreign-card payment, transfer or Korean service. The station in Shchuchinsk and the Shchuchye hotel area remain distinct from Burabay village. The ten profiles, original practical facts, four route groups and other destinations are preserved. 86 browser checks passed.
+
+## Oskemen connected visits, 19 October 2026
+
+Six bilingual choices connect a city day, conditional ethnovillage and Ak-Baur visits, and the existing Ridder, Malaya Ulbinka and Katon-Karagay stays. Nine place pages open the matching visit or nature-stay card. The city day uses separate local transfers between Strelka, optional Arbat and QURT. All three original lodging scenarios, 16 profiles, four route groups and other destinations are preserved. Entry gaps, full return transport and language conditions remain explicit. Direct plan links now also open an existing nature-stay card on the current routes page. 89 browser checks passed.
