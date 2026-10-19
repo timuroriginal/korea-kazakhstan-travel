@@ -156,7 +156,7 @@ function render({focus=false}={}) {
   // A direct plan link opens the matching card without changing the hash router.
   const requestedPlan=new URLSearchParams(location.hash.split('?')[1]||'').get('plan');
   const planCard=currentRoute.startsWith('routes/')&&requestedPlan
-    ? [...app.querySelectorAll('[data-route-id]')].find(card=>card.dataset.routeId===requestedPlan)
+    ? [...app.querySelectorAll('[data-route-id],[data-journey]')].find(card=>(card.dataset.routeId||card.dataset.journey)===requestedPlan)
     : null;
   if(planCard){planCard.open=true;if(focus)planCard.querySelector('summary')?.focus({preventScroll:true});planCard.scrollIntoView({block:'start',behavior:'auto'});}
 }
