@@ -126,7 +126,7 @@ try {
     await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent==='≈ 950 km',null,{polling:100});
     await p.locator('[data-map-choice="aktau"]').click();await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent.replace(/[^0-9]/g,'')==='1719',null,{polling:100});await c.close();
   });
-  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),['almaty','astana','turkistan','aktau','ust-kamenogorsk'].includes(id)?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
+  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),8);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
   await check('Almaty to Kok-Tobe, language toggle preserves nested route',async()=>{await go('destinations/almaty');await page.locator('.place-card[href="#/places/kok-tobe"]').click();await page.locator('[data-gallery="0"]').waitFor();await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('html').getAttribute('lang'),'ru');assert.match(await page.locator('h1').innerText(),/Кок-Тобе/);assert.match(page.url(),/#\/places\/kok-tobe/);await page.reload();await page.locator('[data-gallery="0"]').waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'ru');});
   await check('Gallery and video dialog close on Escape and button',async()=>{await page.locator('[data-gallery="2"]').click();assert.match(await page.locator('#gallery-stage').innerText(),/Прогулка/);await page.locator('[data-gallery="3"]').click();await page.locator('#gallery-stage [data-video]').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);assert.match(await page.locator('dialog').innerText(),/Видео пока не загружено/);await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);await page.locator('#gallery-stage [data-video]').click();await page.locator('#dialog-close').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);});
   await check('Transport tabs support keyboard selection',async()=>{await page.locator('#tab-cable').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#tab-ground').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#panel-ground').isVisible(),true);await page.keyboard.press('Home');assert.equal(await page.locator('#panel-cable').isVisible(),true);});
@@ -348,7 +348,7 @@ try {
     await go('places/burabay-byrabai');assert.match(await page.locator('.visit-facts').innerText(),/средний чек/);assert.match(await page.locator('.dish-suggestions').innerText(),/Манты|만티/);assert.match(await page.locator('.visit-facts').innerText(),/Оплата/);
     await go('routes/burabay');assert.equal(await page.locator('.itinerary-card').count(),4);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
     await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.route-transport').count(),4);assert.match(await page.locator('.route-transport').last().innerText(),/Возвращение/);
-    const last=page.locator('.itinerary-card').last();assert.equal(await last.locator('li').nth(2).locator('.muted').first().innerText(),'День 2');assert.equal(await last.locator('a[href*="ybyrai"]').count(),0);
+    const last=page.locator('.itinerary-card').last();assert.match(await last.locator('.route-blocks > li').nth(1).innerText(),/День 2/);assert.equal(await last.locator('a[href*="ybyrai"]').count(),0);
   });
   await check('Burabay Korean copy, practical topics, routes and saved place work without local language assumptions',async()=>{
     await go('destinations/burabay');await page.locator('[data-language="ko"]').click();
@@ -675,7 +675,7 @@ try {
   await go('routes/ust-kamenogorsk');await page.locator('.itinerary-card').last().locator('summary').first().click();await page.screenshot({path:'test-results/oskemen-routes-mobile.png'});
   await page.setViewportSize({width:1280,height:900});await go('destinations/burabay');await page.screenshot({path:'test-results/burabay-desktop-viewport.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/burabay-mobile-viewport.png'});
-  await go('routes/burabay');await page.locator('.itinerary-card').first().locator('summary').click();await page.screenshot({path:'test-results/burabay-routes-mobile.png'});
+  await go('routes/burabay');await page.locator('.itinerary-card').first().locator(':scope > summary').click();await page.screenshot({path:'test-results/burabay-routes-mobile.png'});
   await page.setViewportSize({width:1280,height:900});await go('destinations/aktau');await page.screenshot({path:'test-results/aktau-desktop-viewport.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/aktau-mobile-viewport.png'});
   await go('places/aktau-jeti');await page.screenshot({path:'test-results/aktau-jeti-mobile.png'});
@@ -793,6 +793,33 @@ try {
     for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
       await page.setViewportSize({width,height:900});await go('destinations/aktau');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await noOverflow();const hub=page.locator('[data-aktau-planning]');if(width===390)await hub.screenshot({path:`test-results/aktau-planning-${lang}-mobile.png`});
       const link=hub.locator('[data-planning-choice="two-days"] a');await link.focus();await page.keyboard.press('Enter');await page.locator('[data-route-id="aktau-route-two-days"][open]').waitFor();await noOverflow();if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/aktau-plans-desktop.png'});
+    }
+    await page.setViewportSize({width:1280,height:900});assert.deepEqual(failures,[]);
+  });
+  await check('Burabay planning separates lakeside rest, shore views, ascent and an overnight with a specific room',async()=>{
+    const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.burabay;
+    assert.equal(d.places.length,10);assert.equal(new Set(d.routes.map(r=>r.id)).size,4);assert.equal(d.routes.filter(r=>r.dayPlan).length,2);
+    for(const lang of ['ru','ko']){
+      await go('destinations/burabay');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const hub=page.locator('[data-burabay-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),4);
+      await go('routes/burabay');assert.equal(await page.locator('[data-day-plan]').count(),2);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
+      const two=page.locator('[data-route-id="burabay-two-days"]');await two.locator('summary').first().click();const stay=two.locator('[data-stay-option]');await stay.locator('summary').click();const room=await stay.innerText();assert.match(room,/STANDARD TWIN/);assert.match(room,lang==='ru'?/собственные душ и санузел/:/전용 샤워실, 화장실/);assert.match(room,lang==='ru'?/не забронированный/:/예약된 객실은 아닙니다/);assert.match(room,lang==='ru'?/Корейское обслуживание и трансфер не подтверждены/:/한국어 응대와 이동 서비스도 확정하지/);assert.equal(await two.locator('.route-blocks > li').count(),2);
+      const panorama=page.locator('[data-route-id="burabay-panorama"]');await panorama.locator('summary').click();assert.match(await panorama.innerText(),lang==='ru'?/Вход и обратный транспорт не подготовлены/:/입장 조건과 귀환 차량 미준비/);
+      assert.equal(await page.locator('.itinerary-card a[href*="ybyrai-trail"], .itinerary-card a[href*="big-chebache"], .itinerary-card a[href*="botai"]').count(),0);
+      assert.equal(await page.locator('[data-copy]').filter({hasText:lang==='ru'?'Копировать фразу':'문구 복사'}).count(),0);
+      const content=await page.locator('.itinerary-grid').evaluate(el=>{const c=el.cloneNode(true);c.querySelectorAll('[lang="ru"]').forEach(n=>n.remove());return c.textContent;});assert.doesNotMatch(content,/[–—]/);if(lang==='ko')assert.doesNotMatch(content,/[А-Яа-яЁё]/);
+    }
+  });
+  await check('Four Burabay choices and seven place links preserve the chosen plan across reload and language changes',async()=>{
+    const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.burabay;
+    for(const c of d.planning.choices){await go('destinations/burabay');await page.locator(`[data-burabay-planning] [data-planning-choice="${c.id}"] a`).click();const card=page.locator(`[data-route-id="${c.routeId}"][open]`);await card.waitFor();await page.reload();await card.waitFor();const lang=await page.locator('html').getAttribute('lang');await page.locator(`[data-language="${lang==='ru'?'ko':'ru'}"]`).click();await card.waitFor();}
+    const linked=d.places.filter(p=>p.planLink);assert.equal(linked.length,7);for(const p of linked){await go('places/'+p.id);await page.locator('[data-place-plan]').click();await page.locator(`[data-route-id="${p.planLink.routeId}"][open]`).waitFor();}
+    await go('routes/burabay?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);
+    await go('places/burabay-ybyrai-trail');assert.equal(await page.locator('[data-place-plan]').count(),0);assert.match(await page.locator('.visit-facts').innerText(),/конечной точки|목적지까지/);await go('places/burabay-baitas');assert.match(await page.locator('.page-heading').innerText(),/без проживания пока не подтверждён|비투숙객 입장 조건이 확인되지/);
+  });
+  await check('Burabay plans and room conditions fit mobile screens and keyboard navigation in RU and KO',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('destinations/burabay');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await noOverflow();const hub=page.locator('[data-burabay-planning]');if(width===390)await hub.screenshot({path:`test-results/burabay-planning-${lang}-mobile.png`});
+      const link=hub.locator('[data-planning-choice="two-days"] a');await link.focus();await page.keyboard.press('Enter');const card=page.locator('[data-route-id="burabay-two-days"][open]');await card.waitFor();const summary=card.locator('[data-stay-option] summary');await summary.focus();await page.keyboard.press('Enter');await noOverflow();if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/burabay-plans-desktop.png'});
     }
     await page.setViewportSize({width:1280,height:900});assert.deepEqual(failures,[]);
   });
