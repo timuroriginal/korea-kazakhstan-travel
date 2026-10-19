@@ -200,3 +200,7 @@ Four bilingual city plans now connect the overview to stops, food options, seaso
 ## Turkistan connected visits, 17 October 2026
 
 A bilingual city day connects the Yasawi mausoleum, optional Khilvet, a rest break, Karavansaray and Kerege. Sauran and Otrar remain separate conditional outings with explicit entry and return-transport gaps. Eight place pages open the matching plan. The separate Yasawi museum is distinguished from the mausoleum, including its Monday closure. All 106 profiles and other destination content are preserved. 80 browser checks passed.
+
+## Aktau connected visits, 19 October 2026
+
+Four bilingual choices separate a coastal city day with optional Jeti from the northern rock landscapes, Kyzylkup/Bozzhyra and a conditional two-day outing through Tuzbair. Nine place pages open matching plans. Meals, heat breaks, waiting and return transport are explicit; the overnight option has no selected private-bathroom room or ready booking. The full Rock Trail, swimming and climbing are not included in the city plan. Existing 12 Aktau profiles, four groups, 106 total places and other destinations are preserved. A leftover Jeti phrase-card reference is replaced with calm menu guidance. 83 browser checks passed.
