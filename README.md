@@ -204,3 +204,7 @@ A bilingual city day connects the Yasawi mausoleum, optional Khilvet, a rest bre
 ## Aktau connected visits, 19 October 2026
 
 Four bilingual choices separate a coastal city day with optional Jeti from the northern rock landscapes, Kyzylkup/Bozzhyra and a conditional two-day outing through Tuzbair. Nine place pages open matching plans. Meals, heat breaks, waiting and return transport are explicit; the overnight option has no selected private-bathroom room or ready booking. The full Rock Trail, swimming and climbing are not included in the city plan. Existing 12 Aktau profiles, four groups, 106 total places and other destinations are preserved. A leftover Jeti phrase-card reference is replaced with calm menu guidance. 83 browser checks passed.
+
+## Burabay connected visits, 19 October 2026
+
+Four bilingual choices separate a short first evening, Blue Bay shore views, conditional Bolektau ascent and a two-day stay. Seven place pages open matching plans. A specific BAITAS STANDARD TWIN room is described as an optional accommodation example with a private shower and bathroom, without verified availability, foreign-card payment, transfer or Korean service. The station in Shchuchinsk and the Shchuchye hotel area remain distinct from Burabay village. The ten profiles, original practical facts, four route groups and other destinations are preserved. 86 browser checks passed.
