@@ -848,5 +848,31 @@ try {
     }
     await page.setViewportSize({width:1280,height:900});assert.deepEqual(failures,[]);
   });
+  await check('Preparation has five populated bilingual topics and six working choices',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('prepare');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      assert.equal(await page.locator('[data-preparation-hub] .practical-grid article').count(),6);
+      for(const id of ['entry','money','connection','language','safety']){
+        await go('prepare/'+id);const root=page.locator('[data-preparation-topic]');assert.equal(await root.getAttribute('data-preparation-topic'),id);
+        assert.equal(await root.locator('nav a').count(),6);assert.equal(await root.locator('nav [aria-current="page"]').count(),1);
+        assert.ok((await root.innerText()).length>500);assert.doesNotMatch(await root.innerText(),/Раздел ещё готовится|Копировать фразу|[\u2013\u2014]|undefined/);
+      }
+    }
+  });
+  await check('Preparation preserves critical distinctions and useful official actions',async()=>{
+    await go('prepare/entry');await page.locator('[data-language="ru"]').click();let body=await page.locator('[data-preparation-topic]').innerText();assert.match(body,/30 дней/);assert.match(body,/60 дней/);assert.match(body,/180 дней/);assert.match(body,/1 июля 2027/);assert.match(body,/трёх рабочих дней/);assert.equal(await page.locator('[data-preparation-topic] a[target="_blank"]').getAttribute('href'),'https://qazeta.kz/en/');
+    await go('prepare/connection');body=await page.locator('[data-preparation-topic]').innerText();assert.match(body,/разными процедурами/);assert.match(body,/25 марта 2025/);assert.match(body,/корейским паспортом здесь не подтверждена/);
+    await go('prepare/money');body=await page.locator('[data-preparation-topic]').innerText();assert.match(body,/не гарантирует/);assert.match(body,/Kaspi QR/);
+    await go('prepare/safety');assert.equal(await page.locator('[data-preparation-topic] a[href^="tel:"]').count(),6);assert.equal(await page.locator('a[href="tel:+77057579922"]').count(),1);
+    await go('prepare/toString');assert.match(await page.locator('h1').innerText(),/Страница не найдена/);
+  });
+  await check('Preparation stays readable on narrow screens in both languages',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('prepare');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await noOverflow();
+      for(const id of ['entry','money','connection','language','safety']){await go('prepare/'+id);await noOverflow();}
+      if(width===390)await page.screenshot({path:`test-results/preparation-safety-${lang}-mobile.png`,fullPage:true});
+    }
+    await page.setViewportSize({width:1280,height:900});await go('prepare');await page.screenshot({path:'test-results/preparation-hub-desktop.png',fullPage:true});assert.deepEqual(failures,[]);
+  });
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
