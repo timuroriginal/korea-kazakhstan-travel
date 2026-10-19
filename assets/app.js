@@ -1,3 +1,4 @@
+import { preparationPage } from './preparation-guide.js';
 import { transportPreparationPage } from './transport-guide.js';
 import { routeMapMarkup, mountRouteMap } from './route-map.js';
 import { destinations, interests, practical, kokTobe, media } from './catalog.js';
@@ -100,8 +101,7 @@ function transportPanels() {
 }
 function preparePage(id) {
   if(id==='transport')return transportPreparationPage(contentContext(),destinations);
-  if(id){const p=practical.find(p=>p.id===id);if(!p)return notFound();return `${breadcrumb([{label:t('여행 준비','Подготовка'),href:'#/prepare'},{label:tr(p.name)}])}<div class="wrap content"><section class="section"><h1>${esc(tr(p.name))}</h1><p>${esc(tr(p.summary))}</p><div class="notice">${t('이 안내는 아직 작성 중입니다. 검증되지 않은 정보를 여행 지침으로 사용하지 마세요.','Раздел ещё готовится. Здесь пока нет проверенной инструкции для поездки.')}</div><ul class="note-list">${p.fields.map(f=>`<li>${esc(tr(f))}. ${t('확인 후 추가','добавим после проверки')}</li>`).join('')}</ul></section>${sourceNote()}<p><a href="#/prepare">← ${t('모든 준비 항목','Все разделы подготовки')}</a></p></div>`;}
-  return `${breadcrumb([{label:t('여행 준비','Подготовка')}])}<div class="wrap content"><section class="section"><h1>${t('출발 전 준비','Подготовка к поездке')}</h1><p class="muted">${t('한국인 여행자에게 필요한 실용 정보를 정리할 공간입니다.','Здесь соберём практические сведения для корейских путешественников.')}</p><div class="practical-grid">${practicalCards()}</div></section>${sourceNote()}</div>`;
+  return preparationPage(contentContext(),practical,id)||notFound();
 }
 function routesPage(id) {
   if(id){
