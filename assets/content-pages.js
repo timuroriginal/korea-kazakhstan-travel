@@ -1,3 +1,4 @@
+import { applyAktauPlans } from './aktau-plans.js';
 import { applyTurkistanPlans } from './turkistan-plans.js';
 import { applyAstanaPlans } from './astana-plans.js';
 import { applyAlmatyCohesion } from './almaty-cohesion.js';
@@ -15,7 +16,7 @@ import { destinations } from './catalog.js';
 import { applyVisitorUpdates } from './visitor-updates.js';
 const reviewedContent=applyVisitorUpdates({...existingContent,astana:astanaContent,turkistan:turkistanContent,aktau:aktauContent,burabay:burabayContent,'ust-kamenogorsk':oskemenContent});
 
-export const guideContent={...reviewedContent,turkistan:applyTurkistanPlans(reviewedContent.turkistan),astana:applyAstanaPlans(reviewedContent.astana),almaty:applyAlmatyCohesion(applyLakeVisits(applyCharynDay(applyAlmatyMountainDay({...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]}))))};
+export const guideContent={...reviewedContent,aktau:applyAktauPlans(reviewedContent.aktau),turkistan:applyTurkistanPlans(reviewedContent.turkistan),astana:applyAstanaPlans(reviewedContent.astana),almaty:applyAlmatyCohesion(applyLakeVisits(applyCharynDay(applyAlmatyMountainDay({...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]}))))};
 
 export const contentPlaces=Object.values(guideContent).flatMap(d=>d.places);
 export const findContentPlace=id=>contentPlaces.find(p=>p.id===id);
@@ -43,7 +44,7 @@ function explorer(data,group,ctx){
 function planningMarkup(data,ctx){
   if(!data.planning)return '';
   const {t,tr,esc}=ctx,plan=data.planning,destination=data.places[0].destination;
-  return `<section class="section" id="planning" data-destination-planning="${esc(destination)}" ${['almaty','astana','turkistan'].includes(destination)?'data-'+esc(destination)+'-planning':''}>${ctx.sectionTitle(esc(tr(plan.title)))}<p>${esc(tr(plan.intro))}</p><div class="place-grid">${plan.choices.map(c=>`<article class="practical-card" data-planning-choice="${esc(c.id)}"><span class="access-badge">${esc(tr(c.status))}</span><h3>${esc(tr(c.title))}</h3><p>${esc(tr(c.body))}</p><a href="#/routes/${esc(destination)}?plan=${esc(encodeURIComponent(c.routeId))}">${esc(tr(c.action))} →</a></article>`).join('')}</div><details class="guide-answer overview-more" data-duration-options><summary>${esc(tr(plan.durationTitle))}</summary><div class="answer-body">${plan.durations.map(d=>`<h3>${esc(tr(d.title))}</h3><p>${esc(tr(d.body))}</p>`).join('')}<p class="small muted">${esc(tr(plan.durationNote))}</p></div></details><p class="small muted">${esc(tr(plan.catalogueNote))}</p><div class="related-row"><a href="#transport" data-scroll="transport">${t('도착과 시내 이동','Прибытие и городское такси')} →</a><a href="#stay" data-scroll="stay">${t('숙박 지역과 음식','Районы проживания и еда')} →</a></div></section>`;
+  return `<section class="section" id="planning" data-destination-planning="${esc(destination)}" ${['almaty','astana','turkistan','aktau'].includes(destination)?'data-'+esc(destination)+'-planning':''}>${ctx.sectionTitle(esc(tr(plan.title)))}<p>${esc(tr(plan.intro))}</p><div class="place-grid">${plan.choices.map(c=>`<article class="practical-card" data-planning-choice="${esc(c.id)}"><span class="access-badge">${esc(tr(c.status))}</span><h3>${esc(tr(c.title))}</h3><p>${esc(tr(c.body))}</p><a href="#/routes/${esc(destination)}?plan=${esc(encodeURIComponent(c.routeId))}">${esc(tr(c.action))} →</a></article>`).join('')}</div><details class="guide-answer overview-more" data-duration-options><summary>${esc(tr(plan.durationTitle))}</summary><div class="answer-body">${plan.durations.map(d=>`<h3>${esc(tr(d.title))}</h3><p>${esc(tr(d.body))}</p>`).join('')}<p class="small muted">${esc(tr(plan.durationNote))}</p></div></details><p class="small muted">${esc(tr(plan.catalogueNote))}</p><div class="related-row"><a href="#transport" data-scroll="transport">${t('도착과 시내 이동','Прибытие и городское такси')} →</a><a href="#stay" data-scroll="stay">${t('숙박 지역과 음식','Районы проживания и еда')} →</a></div></section>`;
 }
 
 function seasonDetails(data,ctx){
@@ -85,6 +86,8 @@ function itinerary(data,ctx){
   const groups=[...new Set(data.routes.map(r=>r.id))];
   const statusLabels={
     'roundtrip-needed':['왕복 차량 필요','Нужна машина туда и обратно'],
+    'blocked-transport-and-language':['차량과 이해 가능한 안내 미준비','Транспорт и понятное сопровождение не подготовлены'],
+    'blocked-stay-and-transport':['숙박과 전체 차량 일정 미준비','Ночёвка и полный выезд не подготовлены'],
     'seasonal-lifts':['케이블카 운행 조건에 따라 방문','Зависит от работы канатных дорог'],
     'conditional-language':['한국어 동행 미확인','Корейское сопровождение не подтверждено'],
     'blocked-transport':['귀환 교통편 미준비','Обратный транспорт не подготовлен'],
@@ -96,7 +99,7 @@ function itinerary(data,ctx){
     const stops=data.routes.filter(r=>r.id===id).sort((a,b)=>a.day-b.day||a.order-b.order);
     const first=stops[0],status=statusLabels[first.status];
     const stopLink=r=>{const p=findContentPlace(r.placeId);return `<a href="#/places/${esc(p.id)}">${esc(name(p))}</a>${r.optional?`<span class="small muted"> ${t('선택 방문','По желанию')}</span>`:''}`;};
-    const sequence=first.dayPlan?dayPlanMarkup(first.dayPlan,ctx):first.blocks?`<p lang="${lang}">${esc(tr(first.copy.note))}</p><ol class="route-blocks">${first.blocks.map(block=>`<li><h3>${esc(tr(block.title))}</h3>${block.placeIds.map(placeId=>stopLink(stops.find(r=>r.placeId===placeId))).join('<br>')}</li>`).join('')}</ol>`:`<ol>${stops.map(r=>`<li><span class="small muted">${t(`${r.day}일차`,`День ${r.day}`)}</span>${stopLink(r)}<p class="small" lang="${lang}">${esc(tr(r.copy.note))}</p></li>`).join('')}</ol>`;
+    const sequence=first.dayPlan?dayPlanMarkup(first.dayPlan,ctx):first.blocks?`<p lang="${lang}">${esc(tr(first.copy.note))}</p><ol class="route-blocks">${first.blocks.map(block=>`<li><h3>${esc(tr(block.title))}</h3>${block.body?`<p lang="${lang}">${esc(tr(block.body))}</p>`:''}${block.placeIds.map(placeId=>stopLink(stops.find(r=>r.placeId===placeId))).join('<br>')}</li>`).join('')}</ol>`:`<ol>${stops.map(r=>`<li><span class="small muted">${t(`${r.day}일차`,`День ${r.day}`)}</span>${stopLink(r)}<p class="small" lang="${lang}">${esc(tr(r.copy.note))}</p></li>`).join('')}</ol>`;
     return `<details class="itinerary-card${first.dayPlan?' itinerary-day-plan':''}" data-route-id="${esc(id)}"><summary><span class="eyebrow">${first.copy.format?esc(tr(first.copy.format)):t(first.parent?'3일차 대안':'방문 순서',first.parent?'Вариант третьего дня':'Порядок посещения')}</span><span lang="${lang}">${esc(tr(first.copy.title))}</span>${status?`<span class="access-badge">${t(...status)}</span>`:''}</summary>${sequence}${first.copy.transport?`<div class="route-transport"><h3>${t('이동','Переезды')}</h3><p lang="${lang}">${esc(tr(first.copy.transport))}</p><h3>${t('귀환','Возвращение')}</h3><p lang="${lang}">${esc(tr(first.copy.returnTransport))}</p></div>`:''}</details>`;
   }).join('')}</div>`;
 }
