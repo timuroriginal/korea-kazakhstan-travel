@@ -874,5 +874,27 @@ try {
     }
     await page.setViewportSize({width:1280,height:900});await go('prepare');await page.screenshot({path:'test-results/preparation-hub-desktop.png',fullPage:true});assert.deepEqual(failures,[]);
   });
+  await check('Korean layer retains Kazakhstan geography and identifies both departure airports',async()=>{
+    const {koreaMapData}=await import('../assets/korea-map-data.js');assert.equal(koreaMapData.shapes.length,17);assert.ok(koreaMapData.shapes.some(s=>s.code==='KR-50'));assert.equal(koreaMapData.airports.incheon.arp,'372745N 1262621E');assert.equal(koreaMapData.airports.gimhae.arp,'351050N 1285617E');
+    const {airDistanceKm}=await import('../assets/route-map.js');assert.ok(Math.abs(airDistanceKm('incheon','almaty')-4171.4)<1);assert.ok(Math.abs(airDistanceKm('gimhae','almaty')-4484.9)<1);assert.equal(airDistanceKm('incheon','astana'),airDistanceKm('astana','incheon'));
+    const {koreanFlight}=await import('../assets/korea-flights.js');assert.equal(koreanFlight('gimhae','almaty','2026-10-19').minutes,465);assert.equal(koreanFlight('gimhae','astana','2026-10-19'),null);assert.equal(koreanFlight('incheon','almaty','2027-01-01').current,false);
+    await go('routes');assert.equal(await page.locator('.map-area').count(),20);assert.equal(await page.locator('.korea-area').count(),17);assert.equal(await page.locator('.map-marker').count(),6);assert.equal(await page.locator('.korea-airport').count(),2);
+    for(const path of await page.locator('.korea-area').evaluateAll(nodes=>nodes.map(n=>{const b=n.getBBox();return {width:b.width,height:b.height};})))assert.ok(path.width<310&&path.height<500); // Reject reversed-ring world rectangles.
+  });
+  await check('Korea mode animates verified time and handles unsupported pairs without invented schedules',async()=>{
+    const c=await browser.newContext({viewport:{width:1280,height:900}});await c.addInitScript(()=>{const Original=Date;window.Date=class extends Original{constructor(...args){super(...(args.length?args:['2026-10-19T06:00:00Z']));}static now(){return new Original('2026-10-19T06:00:00Z').getTime();}};});const p=await c.newPage();p.on('pageerror',e=>failures.push(e.message));await p.goto(base+'/#/routes');await p.locator('[data-flight-mode="korea"]').click();assert.equal(await p.locator('#flight-origin').inputValue(),'incheon');assert.equal(await p.locator('#flight-swap').isDisabled(),true);await p.locator('[data-map-choice="almaty"]').click();
+    assert.equal(await p.locator('#flight-distance').getAttribute('data-km'),'4171');assert.equal(await p.locator('#flight-duration').getAttribute('data-minutes'),'400');await p.waitForFunction(()=>document.querySelector('#flight-duration').textContent==='약 6시간 40분');
+    await p.locator('#flight-origin').selectOption('gimhae');assert.equal(await p.locator('#flight-duration').getAttribute('data-minutes'),'465');await p.waitForFunction(()=>document.querySelector('#flight-duration').textContent==='약 7시간 45분');assert.match(await p.locator('#flight-hint').innerText(),/계절/);
+    await p.locator('[data-map-choice="astana"]').click();assert.equal(await p.locator('#flight-duration').getAttribute('data-minutes'),'');assert.match(await p.locator('#flight-hint').innerText(),/확인되지/);assert.equal(await p.locator('.flight-plane').isVisible(),false);
+    await p.locator('[data-flight-mode="domestic"]').click();assert.equal(await p.locator('#flight-origin').inputValue(),'astana');assert.equal(await p.locator('#flight-swap').isEnabled(),true);await c.close();
+  });
+  await check('Korean airport selection, localization and paired maps work on touch and keyboard',async()=>{
+    await page.emulateMedia({reducedMotion:'reduce'});await go('routes');await page.locator('[data-flight-mode="korea"]').click();await page.locator('[data-map-choice="almaty"]').click();
+    for(const lang of ['ru','ko']){if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('#flight-origin').selectOption('gimhae');assert.match(await page.locator('#flight-origin option:checked').innerText(),lang==='ru'?/Пусан/:/부산/);
+      for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:950});await page.waitForFunction(expected=>document.querySelector('.kazakhstan-map').getAttribute('viewBox')===expected,width<=600?'0 0 900 1200':'0 0 1250 570');await noOverflow();if(width===390||width===1280)await page.locator('.route-explorer').screenshot({path:`test-results/korea-map-${lang}-${width}.png`});}
+    }
+    const c=await browser.newContext({viewport:{width:390,height:900},hasTouch:true,isMobile:true,reducedMotion:'reduce'});const p=await c.newPage();p.on('pageerror',e=>failures.push(e.message));await p.goto(base+'/#/routes');await p.locator('.korea-airport[data-korea-origin="gimhae"] .marker-hit').tap();assert.equal(await p.locator('#flight-origin').inputValue(),'gimhae');await p.locator('[data-map-choice="almaty"]').tap();assert.equal(await p.locator('#route-map-card').getAttribute('data-destination'),'almaty');await c.close();
+    await page.setViewportSize({width:1280,height:900});await page.locator('[data-flight-mode="domestic"]').click();assert.deepEqual(failures,[]);
+  });
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
