@@ -1,3 +1,4 @@
+import { applyOskemenPlans } from './oskemen-plans.js';
 import { applyBurabayPlans } from './burabay-plans.js';
 import { applyAktauPlans } from './aktau-plans.js';
 import { applyTurkistanPlans } from './turkistan-plans.js';
@@ -17,7 +18,7 @@ import { destinations } from './catalog.js';
 import { applyVisitorUpdates } from './visitor-updates.js';
 const reviewedContent=applyVisitorUpdates({...existingContent,astana:astanaContent,turkistan:turkistanContent,aktau:aktauContent,burabay:burabayContent,'ust-kamenogorsk':oskemenContent});
 
-export const guideContent={...reviewedContent,burabay:applyBurabayPlans(reviewedContent.burabay),aktau:applyAktauPlans(reviewedContent.aktau),turkistan:applyTurkistanPlans(reviewedContent.turkistan),astana:applyAstanaPlans(reviewedContent.astana),almaty:applyAlmatyCohesion(applyLakeVisits(applyCharynDay(applyAlmatyMountainDay({...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]}))))};
+export const guideContent={...reviewedContent,'ust-kamenogorsk':applyOskemenPlans(reviewedContent['ust-kamenogorsk']),burabay:applyBurabayPlans(reviewedContent.burabay),aktau:applyAktauPlans(reviewedContent.aktau),turkistan:applyTurkistanPlans(reviewedContent.turkistan),astana:applyAstanaPlans(reviewedContent.astana),almaty:applyAlmatyCohesion(applyLakeVisits(applyCharynDay(applyAlmatyMountainDay({...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]}))))};
 
 export const contentPlaces=Object.values(guideContent).flatMap(d=>d.places);
 export const findContentPlace=id=>contentPlaces.find(p=>p.id===id);
