@@ -126,7 +126,7 @@ try {
     await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent==='≈ 950 km',null,{polling:100});
     await p.locator('[data-map-choice="aktau"]').click();await p.waitForFunction(()=>document.querySelector('#flight-distance').textContent.replace(/[^0-9]/g,'')==='1719',null,{polling:100});await c.close();
   });
-  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),['almaty','astana','turkistan','ust-kamenogorsk'].includes(id)?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
+  await check('All six destinations render on direct navigation and refresh',async()=>{for(const id of ['almaty','astana','aktau','ust-kamenogorsk','burabay','turkistan']){await go(`destinations/${id}`);assert.equal(await page.locator('#content h1').count(),1);assert.equal(await page.locator('#content .section').count(),['almaty','astana','turkistan','aktau','ust-kamenogorsk'].includes(id)?8:7);await page.reload();await page.locator('#content h1').waitFor();await noOverflow();}});
   await check('Almaty to Kok-Tobe, language toggle preserves nested route',async()=>{await go('destinations/almaty');await page.locator('.place-card[href="#/places/kok-tobe"]').click();await page.locator('[data-gallery="0"]').waitFor();await page.locator('[data-language="ru"]').click();assert.equal(await page.locator('html').getAttribute('lang'),'ru');assert.match(await page.locator('h1').innerText(),/Кок-Тобе/);assert.match(page.url(),/#\/places\/kok-tobe/);await page.reload();await page.locator('[data-gallery="0"]').waitFor();assert.equal(await page.locator('html').getAttribute('lang'),'ru');});
   await check('Gallery and video dialog close on Escape and button',async()=>{await page.locator('[data-gallery="2"]').click();assert.match(await page.locator('#gallery-stage').innerText(),/Прогулка/);await page.locator('[data-gallery="3"]').click();await page.locator('#gallery-stage [data-video]').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);assert.match(await page.locator('dialog').innerText(),/Видео пока не загружено/);await page.keyboard.press('Escape');assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);await page.locator('#gallery-stage [data-video]').click();await page.locator('#dialog-close').click();assert.equal(await page.locator('dialog').evaluate(d=>d.open),false);});
   await check('Transport tabs support keyboard selection',async()=>{await page.locator('#tab-cable').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#tab-ground').getAttribute('aria-selected'),'true');assert.equal(await page.locator('#panel-ground').isVisible(),true);await page.keyboard.press('Home');assert.equal(await page.locator('#panel-cable').isVisible(),true);});
@@ -316,7 +316,7 @@ try {
     await go('places/aktau-bozzhyra');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);assert.match(await page.locator('#transport').innerText(),/Возвращение/);
     await go('places/aktau-rock-trail');assert.match(await page.locator('.page-heading').innerText(),/Сквозной проход/);
     await go('routes/aktau');assert.equal(await page.locator('.itinerary-card').count(),4);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
-    await page.locator('.itinerary-card').last().locator('summary').first().click();assert.equal(await page.locator('.itinerary-card').last().locator('li').nth(1).locator('.muted').first().innerText(),'День 2');
+    await page.locator('.itinerary-card').last().locator('summary').first().click();assert.match(await page.locator('.itinerary-card').last().locator('.route-blocks > li').nth(1).innerText(),/День 2/);
   });
   await check('Aktau Korean copy, search, routes and saved place remain usable',async()=>{
     await go('destinations/aktau');await page.locator('[data-language="ko"]').click();const all=page.locator('[data-place-group="all"]');
@@ -768,6 +768,31 @@ try {
       await page.setViewportSize({width,height:900});await go('destinations/turkistan');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const hub=page.locator('[data-turkistan-planning]');await noOverflow();
       if(width===390)await hub.screenshot({path:`test-results/turkistan-planning-${lang}-mobile.png`});const link=hub.locator('[data-planning-choice="city"] a');await link.focus();await page.keyboard.press('Enter');await page.locator('[data-route-id="turkistan-city-day"][open]').waitFor();await page.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
       if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/turkistan-day-desktop.png'});
+    }
+    await page.setViewportSize({width:1280,height:900});assert.deepEqual(failures,[]);
+  });
+  await check('Aktau separates a city day, two day-trip choices and a conditional overnight in RU and KO',async()=>{
+    const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.aktau;
+    assert.equal(d.places.length,12);assert.equal(new Set(d.routes.map(r=>r.id)).size,4);assert.equal(d.routes.filter(r=>r.dayPlan).length,1);
+    for(const lang of ['ru','ko']){
+      await go('destinations/aktau');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const hub=page.locator('[data-aktau-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),4);assert.equal(await hub.locator('a[href^="#/routes/aktau?plan="]').count(),4);
+      await go('routes/aktau?plan=aktau-route-city');const city=page.locator('[data-route-id="aktau-route-city"][open]');await city.waitFor();await city.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+      assert.equal(await city.locator('.steps > li').count(),2);assert.equal(await city.locator('button[data-copy*="181"]').count(),1);assert.match(await city.innerText(),lang==='ru'?/Купание|купание/:/해수욕/);assert.doesNotMatch(await city.innerText(),/Копировать фразу|문구 복사|[\u2013\u2014]/);
+      const two=page.locator('[data-route-id="aktau-route-two-days"]');await two.locator('summary').first().click();const body=await two.innerText();assert.match(body,lang==='ru'?/Ночёвка и полный выезд не подготовлены/:/숙박과 전체 차량 일정 미준비/);assert.match(body,lang==='ru'?/собственные душ и туалет/:/전용 샤워실, 화장실/);assert.match(body,lang==='ru'?/Такой номер ещё не выбран/:/아직 선정하지/);assert.equal(await two.locator('.route-blocks > li').count(),2);
+      for(const id of ['aktau-route-north','aktau-route-bozzhyra-day'])assert.equal(await page.locator(`[data-route-id="${id}"] .access-badge`).count(),1);
+      assert.equal(await page.locator('[data-route-id="aktau-route-bozzhyra-day"] a[href="#/places/aktau-tuzbair"]').count(),0);
+    }
+  });
+  await check('All four Aktau choices and nine place links open matching plans through reload and language change',async()=>{
+    const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.aktau;
+    for(const c of d.planning.choices){await go('destinations/aktau');await page.locator(`[data-aktau-planning] [data-planning-choice="${c.id}"] a`).click();const card=page.locator(`[data-route-id="${c.routeId}"][open]`);await card.waitFor();await page.reload();await card.waitFor();const lang=await page.locator('html').getAttribute('lang');await page.locator(`[data-language="${lang==='ru'?'ko':'ru'}"]`).click();await card.waitFor();}
+    const linked=d.places.filter(p=>p.planLink);assert.equal(linked.length,9);for(const p of linked){await go('places/'+p.id);await page.locator('[data-place-plan]').click();await page.locator(`[data-route-id="${p.planLink.routeId}"][open]`).waitFor();}
+    await go('routes/aktau?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);await go('places/aktau-rock-trail');assert.match(await page.locator('.page-heading').innerText(),/Сквозной проход|전체 구간/);
+  });
+  await check('Aktau plans and overnight conditions fit mobile and keyboard navigation in both languages',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:900});await go('destinations/aktau');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await noOverflow();const hub=page.locator('[data-aktau-planning]');if(width===390)await hub.screenshot({path:`test-results/aktau-planning-${lang}-mobile.png`});
+      const link=hub.locator('[data-planning-choice="two-days"] a');await link.focus();await page.keyboard.press('Enter');await page.locator('[data-route-id="aktau-route-two-days"][open]').waitFor();await noOverflow();if(width===1280&&lang==='ru')await page.screenshot({path:'test-results/aktau-plans-desktop.png'});
     }
     await page.setViewportSize({width:1280,height:900});assert.deepEqual(failures,[]);
   });
