@@ -139,7 +139,7 @@ try {
   await check('Almaty filters combine with search, empty state and expansion',async()=>{
     await go('destinations/almaty');const city=page.locator('[data-place-group="all"]');
     assert.equal(await city.locator('.place-card').count(),6);
-    await city.locator('[data-place-more]').click();assert.equal(await city.locator('.place-card').count(),41);
+    await city.locator('[data-place-more]').click();assert.equal(await city.locator('.place-card').count(),42);
     await city.locator('[data-place-filter="culture"]').click();await city.locator('[data-place-search]').fill('базар');assert.equal(await city.locator('.place-card').count(),0);
     await city.locator('[data-place-filter="shopping"]').click();assert.equal(await city.locator('.place-card').count(),1);assert.match(await city.locator('h3').innerText(),/Зелёный/);
     await city.locator('[data-place-search]').fill('');await city.locator('[data-place-filter="all"]').click();assert.equal(await city.locator('.place-card').count(),6);
@@ -147,9 +147,9 @@ try {
     assert.equal(await page.locator('[data-place-id="almaty-medeu-visit-center"]').count(),0);
     await page.locator('[data-scroll="nearby"]').first().click();assert.match(page.url(),/#\/destinations\/almaty$/);
   });
-  await check('All 106 place pages preserve internal research without public source furniture',async()=>{
-    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,106);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,41);
-    for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.equal(['aktau','burabay','ust-kamenogorsk'].includes(p.destination)?p.sources.length===0:p.sources.length>0,true);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
+  await check('All 110 place pages preserve internal research without public source furniture',async()=>{
+    const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,110);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,42);
+    for(const p of contentPlaces){await go(`places/${p.id}`);assert.match(await page.locator('h1').innerText(),new RegExp(p.name.ru.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));assert.ok((await page.locator('#overview').innerText()).length>300);assert.equal(['aktau','burabay','ust-kamenogorsk'].includes(p.destination)||['almaty-tanbaly','astana-opera','astana-ballet'].includes(p.id)?p.sources.length===0:p.sources.length>0,true);assert.equal(await page.locator('#sources, .source-links, a[href*="2gis.kz"]').count(),0);await noOverflow();}
     // Audit rendered Almaty links, including local section targets and direct plans.
     const {guideContent}=await import('../assets/content-pages.js');
     const paths=new Set(['destinations','interests','routes','saved','about','prepare',...Object.keys(guideContent).flatMap(id=>['destinations/'+id,'routes/'+id]),...contentPlaces.map(p=>'places/'+p.id),...['entry','money','connection','transport','language','safety'].map(id=>'prepare/'+id)]);
@@ -190,9 +190,9 @@ try {
     for(const width of [320,390]){await page.setViewportSize({width,height:900});await noOverflow();await go('destinations/almaty');await noOverflow();}
     await page.locator('[data-language="ru"]').click();
   });
-  await check('Almaty retains four route groups with independent lake choices',async()=>{
-    await go('routes/almaty');assert.equal(await page.locator('.itinerary-card').count(),4);await page.locator('.itinerary-card').last().locator('summary').first().click();
-    assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kolsai"]').count(),1);assert.equal(await page.locator('.itinerary-card').last().locator('a[href="#/places/almaty-kaindy"]').count(),1);assert.doesNotMatch((await page.locator('.itinerary-card:not(.itinerary-day-plan)').allTextContents()).join(' '),/\b\d\d:\d\d\b/);
+  await check('Almaty retains independent lake choices alongside new regional visits',async()=>{
+    await go('routes/almaty');assert.equal(await page.locator('.itinerary-card').count(),6);await page.locator('[data-route-id="route-3d-kolsai"] summary').first().click();
+    assert.equal(await page.locator('[data-route-id="route-3d-kolsai"]').locator('a[href="#/places/almaty-kolsai"]').count(),1);assert.equal(await page.locator('[data-route-id="route-3d-kolsai"]').locator('a[href="#/places/almaty-kaindy"]').count(),1);assert.doesNotMatch((await page.locator('.itinerary-card:not(.itinerary-day-plan)').allTextContents()).join(' '),/\b\d\d:\d\d\b/);
   });
   await check('Nature filter includes resorts, lakes and hikes across Almaty',async()=>{
     await go('destinations/almaty');const all=page.locator('[data-place-group="all"]');
@@ -216,7 +216,7 @@ try {
   await check('Astana catalog, seasons and nearby trips use their own data',async()=>{
     await go('destinations/astana');
     const all=page.locator('[data-place-group="all"]');
-    assert.match(await all.locator('[data-place-count]').innerText(),/из 18/);
+    assert.match(await all.locator('[data-place-count]').innerText(),/из 20/);
     assert.equal(await page.locator('.season-details details').count(),7);
     await all.locator('[data-place-filter="food"]').click();assert.equal(await all.locator('.place-card').count(),2);
     assert.match(await all.innerText(),/Sandyq/);
@@ -234,7 +234,7 @@ try {
       assert.equal(await page.locator('.breadcrumbs a[href="#/destinations/astana"]').count(),1);
       assert.equal(await page.locator('.breadcrumbs a[href="#/destinations/almaty"]').count(),0);
       assert.equal(await page.locator('.page-heading .eyebrow').innerText().then(s=>s.startsWith('ASTANA')),true);
-      assert.equal(await page.locator('#content a[href^="https://"]').count(),0);
+      assert.equal(await page.locator('#content a[href^="https://"]:not([data-visitor-action])').count(),0);
       assert.doesNotMatch(await page.locator('#overview').innerText(),/2ГИС|по отзывам|[\u2013\u2014]/);
     }
     await go('places/astana-national-museum');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);
@@ -245,7 +245,7 @@ try {
     await page.locator('[data-place-group="all"] [data-place-search]').fill('바이테레크');assert.equal(await page.locator('[data-place-group="all"] .place-card').count(),1);
     await page.locator('.season-details details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
     assert.doesNotMatch(await page.locator('#overview').innerText(),/[А-Яа-яЁё]|[\u2013\u2014]/);
-    await go('routes/astana');assert.equal(await page.locator('.itinerary-card').count(),6);
+    await go('routes/astana');assert.equal(await page.locator('.itinerary-card').count(),7);
     await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
     assert.equal(await page.locator('.itinerary-card a[href^="#/places/almaty"]').count(),0);
     assert.doesNotMatch(await page.locator('.itinerary-grid').evaluate(el=>{const copy=el.cloneNode(true);copy.querySelectorAll('[lang="ru"]').forEach(n=>n.remove());return copy.textContent;}),/[А-Яа-яЁё]|[\u2013\u2014]/);
@@ -330,25 +330,25 @@ try {
     for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});for(const route of ['destinations/aktau','places/aktau-shakpak-ata','places/aktau-jeti','routes/aktau']){await go(route);await noOverflow();}}
     assert.deepEqual(failures,[]);
   });
-  await check('Burabay has ten specific profiles, five conditions, four seasons and independent filters',async()=>{
+  await check('Burabay has eleven profiles with visible conditions, four seasons and independent filters',async()=>{
     await page.setViewportSize({width:1280,height:900});await go('destinations/burabay');
-    const all=page.locator('[data-place-group="all"]');assert.match(await all.locator('[data-place-count]').innerText(),/из 10/);
+    const all=page.locator('[data-place-group="all"]');assert.match(await all.locator('[data-place-count]').innerText(),/из 11/);
     assert.equal(await page.locator('.season-details details').count(),4);
-    await all.locator('[data-place-more]').click();assert.equal(await all.locator('.place-card').count(),10);
-    assert.equal(await all.locator('.access-badge').count(),5);
+    await all.locator('[data-place-more]').click();assert.equal(await all.locator('.place-card').count(),11);
+    assert.equal(await all.locator('.access-badge').count(),7);
     await all.locator('[data-place-filter="food"]').click();assert.equal(await all.locator('.place-card').count(),2);
     await all.locator('[data-place-search]').fill('Byrabai');assert.equal(await all.locator('.place-card').count(),1);
-    await all.locator('[data-place-search]').fill('');await all.locator('[data-place-filter="nature"]').click();assert.equal(await all.locator('.place-card').count(),5);
-    for(const id of ['beach','winter','forest-trail','shchuchinsk-base','multimedia','imanaev-creek','shchuchye-lake']){await go('places/burabay-'+id);assert.match(await page.locator('h1').innerText(),/Страница не найдена/);}
+    await all.locator('[data-place-search]').fill('');await all.locator('[data-place-filter="nature"]').click();assert.equal(await all.locator('.place-card').count(),6);
+    for(const id of ['beach','winter','forest-trail','shchuchinsk-base','multimedia','shchuchye-lake']){await go('places/burabay-'+id);assert.match(await page.locator('h1').innerText(),/Страница не найдена/);}
   });
   await check('Burabay keeps unknown entry, museum tariff, route return and day boundaries explicit',async()=>{
     await go('places/burabay-botai');assert.match(await page.locator('.visit-facts').innerText(),/Не подтверждено/);assert.doesNotMatch(await page.locator('.visit-facts').innerText(),/500/);
     await go('places/burabay-baitas');assert.match(await page.locator('.page-heading').innerText(),/без проживания пока не подтверждён/);
     await go('places/burabay-ybyrai-trail');assert.match(await page.locator('.visit-facts').innerText(),/конечной точки/);assert.match(await page.locator('#transport').innerText(),/пока не установлен/);
     await go('places/burabay-byrabai');assert.match(await page.locator('.visit-facts').innerText(),/средний чек/);assert.match(await page.locator('.dish-suggestions').innerText(),/Манты|만티/);assert.match(await page.locator('.visit-facts').innerText(),/Оплата/);
-    await go('routes/burabay');assert.equal(await page.locator('.itinerary-card').count(),4);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
-    await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.route-transport').count(),4);assert.match(await page.locator('.route-transport').last().innerText(),/Возвращение/);
-    const last=page.locator('.itinerary-card').last();assert.match(await last.locator('.route-blocks > li').nth(1).innerText(),/День 2/);assert.equal(await last.locator('a[href*="ybyrai"]').count(),0);
+    await go('routes/burabay');assert.equal(await page.locator('.itinerary-card').count(),5);assert.equal(await page.locator('.itinerary-card .access-badge').count(),4);
+    await page.locator('.itinerary-card').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));assert.equal(await page.locator('.route-transport').count(),5);assert.match(await page.locator('.route-transport').last().innerText(),/Возвращение/);
+    const last=page.locator('[data-route-id="burabay-two-days"]');assert.match(await last.locator('.route-blocks > li').nth(1).innerText(),/День 2/);assert.equal(await last.locator('a[href*="ybyrai"]').count(),0);
   });
   await check('Burabay Korean copy, practical topics, routes and saved place work without local language assumptions',async()=>{
     await go('destinations/burabay');await page.locator('[data-language="ko"]').click();
@@ -593,7 +593,7 @@ try {
   await check('Charyn disclosures work by keyboard and fit mobile screens without changing other Almaty days',async()=>{
     for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
       await page.setViewportSize({width,height:900});await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
-      assert.equal(await page.locator('.itinerary-card').count(),4);
+      assert.equal(await page.locator('.itinerary-card').count(),6);
       const card=page.locator('[data-route-id="route-3d-charyn"]');await card.evaluate(n=>n.open=false);await card.locator('summary').first().focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.querySelector('[data-route-id="route-3d-charyn"]').open);
       await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
       if(width===390)await card.screenshot({path:`test-results/charyn-day-${lang}-mobile.png`});
@@ -627,7 +627,7 @@ try {
   await check('Lake options and both place pages fit mobile screens and support keyboard controls',async()=>{
     for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
       await page.setViewportSize({width,height:900});await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
-      assert.equal(await page.locator('.itinerary-card').count(),4);
+      assert.equal(await page.locator('.itinerary-card').count(),6);
       const card=page.locator('[data-route-id="route-3d-kolsai"]');await card.evaluate(n=>n.open=false);await card.locator('summary').first().focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.querySelector('[data-route-id="route-3d-kolsai"]').open);
       await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await noOverflow();
       if(width===390)await card.screenshot({path:`test-results/lakes-pair-${lang}-mobile.png`});
@@ -636,11 +636,11 @@ try {
     }
     await page.locator('[data-language="ru"]').click();assert.deepEqual(failures,[]);
   });
-  await check('Almaty overview connects four visit types, realistic day budgets and optional lodging',async()=>{
+  await check('Almaty overview connects six visit types, realistic day budgets and optional lodging',async()=>{
     for(const lang of ['ru','ko']){
       await go('destinations/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
-      const hub=page.locator('[data-almaty-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),4);
-      assert.deepEqual(await hub.locator('[data-planning-choice] a').evaluateAll(nodes=>nodes.map(a=>a.getAttribute('href'))),['route-1d','route-3d','route-3d-charyn','route-3d-kolsai'].map(id=>'#/routes/almaty?plan='+id));
+      const hub=page.locator('[data-almaty-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),6);
+      assert.deepEqual(await hub.locator('[data-planning-choice] a').evaluateAll(nodes=>nodes.map(a=>a.getAttribute('href'))),['route-1d','route-3d','route-3d-charyn','route-3d-kolsai','almaty-tanbaly-visit','almaty-altyn-emel-visit'].map(id=>'#/routes/almaty?plan='+id));
       await hub.locator('[data-duration-options] summary').click();const body=await hub.innerText();assert.match(body,lang==='ru'?/Пять или шесть дней/:/5~6일/);assert.match(body,lang==='ru'?/без учёта ваших рейсов/:/항공편 시간은 반영하지/);assert.match(body,lang==='ru'?/Готовый перевозчик пока не подобран/:/운송편은 아직 선정되지/);assert.doesNotMatch(body,/[\u2013\u2014]|2ГИС|по отзывам|출처/);
       await page.locator('[data-practical-id="practical-stay-center"] summary').click();assert.match(await page.locator('[data-practical-id="practical-stay-center"]').innerText(),lang==='ru'?/менять отель не обязательно/:/숙소를 옮길 필요는 없습니다/);
       await hub.locator('[data-scroll="transport"]').click();assert.match(page.url(),/#\/destinations\/almaty$/);assert.ok(await page.locator('#transport').isVisible());
@@ -654,9 +654,9 @@ try {
       await page.reload();await page.locator('h1').waitFor();assert.equal(await card.getAttribute('open'),'');
       await page.locator('[data-language="ko"]').click();assert.equal(await card.getAttribute('open'),'');assert.match(page.url(),new RegExp('plan='+choice.routeId));await page.locator('[data-language="ru"]').click();
     }
-    const linked=guideContent.almaty.places.filter(p=>p.planLink);assert.equal(linked.length,8);
+    const linked=guideContent.almaty.places.filter(p=>p.planLink);assert.equal(linked.length,10);
     for(const p of linked){await go('places/'+p.id);assert.equal(await page.locator('[data-place-plan]').getAttribute('href'),'#/routes/almaty?plan='+p.planLink.routeId);await page.locator('[data-place-plan]').click();await page.locator(`[data-route-id="${p.planLink.routeId}"][open]`).waitFor();assert.equal(await page.locator(`[data-route-id="${p.planLink.routeId}"]`).getAttribute('open'),'');}
-    await go('routes/almaty?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);assert.equal(await page.locator('.itinerary-card').count(),4);
+    await go('routes/almaty?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);assert.equal(await page.locator('.itinerary-card').count(),6);
     await go('routes/astana?plan=route-1d');assert.equal(await page.locator('[data-almaty-planning]').count(),0);assert.doesNotMatch(await page.locator('h1').innerText(),/Алматы/);
   });
   await check('Almaty planning stays usable with keyboard and at mobile widths',async()=>{
@@ -707,15 +707,15 @@ try {
     await page.locator('[data-route-id="route-1d"] details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));await page.setViewportSize({width:390,height:844});await noOverflow();await page.screenshot({path:'test-results/calm-language-ru-mobile.png',fullPage:true});
     await page.setViewportSize({width:1280,height:900});
   });
-  await check('Astana overview links four distinct city days and keeps distant visits conditional',async()=>{
+  await check('Astana overview links city days and a cultural evening while keeping distant visits conditional',async()=>{
     const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.astana;
-    assert.equal(d.places.length,18);assert.equal(new Set(d.routes.map(r=>r.id)).size,6);assert.equal(d.routes.filter(r=>r.dayPlan).length,4);
+    assert.equal(d.places.length,20);assert.equal(new Set(d.routes.map(r=>r.id)).size,7);assert.equal(d.routes.filter(r=>r.dayPlan).length,5);
     for(const lang of ['ru','ko']){
       await go('destinations/astana');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
-      const hub=page.locator('[data-astana-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),4);
-      assert.equal(await hub.locator('a[href^="#/routes/astana?plan="]').count(),4);assert.equal(await hub.locator('a[href^="#/routes/almaty"]').count(),0);
+      const hub=page.locator('[data-astana-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),5);
+      assert.equal(await hub.locator('a[href^="#/routes/astana?plan="]').count(),5);assert.equal(await hub.locator('a[href^="#/routes/almaty"]').count(),0);
       await hub.locator('[data-duration-options] summary').click();assert.match(await hub.innerText(),lang==='ru'?/Два дня/:/2일/);
-      await go('routes/astana');assert.equal(await page.locator('.itinerary-day-plan').count(),4);await page.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
+      await go('routes/astana');assert.equal(await page.locator('.itinerary-day-plan').count(),5);await page.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
       assert.match(await page.locator('[data-route-id="astana-third-alzhir"]').innerText(),lang==='ru'?/Обратный транспорт не подготовлен/:/귀환 교통편 미준비/);
       assert.match(await page.locator('[data-route-id="astana-third-nature"]').innerText(),lang==='ru'?/Допуски и транспорт не подтверждены/:/출입 조건과 교통편 미확인/);
       assert.match(await page.locator('[data-route-id="astana-second-day"]').innerText(),lang==='ru'?/понедельник/:/월요일/);
@@ -732,7 +732,7 @@ try {
       await page.reload();await card.waitFor();await page.locator('[data-language="ko"]').click();await card.waitFor();assert.match(page.url(),new RegExp('plan='+c.routeId));
     }
     for(const p of d.places.filter(p=>p.planLink)){await go('places/'+p.id);await page.locator('[data-place-plan]').click();await page.locator(`[data-route-id="${p.planLink.routeId}"][open]`).waitFor();}
-    assert.equal(d.places.filter(p=>p.planLink).length,14);await go('routes/astana?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);
+    assert.equal(d.places.filter(p=>p.planLink).length,16);await go('routes/astana?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);
   });
   await check('Astana day cards work on mobile and by keyboard in both languages',async()=>{
     for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
@@ -798,10 +798,10 @@ try {
   });
   await check('Burabay planning separates lakeside rest, shore views, ascent and an overnight with a specific room',async()=>{
     const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.burabay;
-    assert.equal(d.places.length,10);assert.equal(new Set(d.routes.map(r=>r.id)).size,4);assert.equal(d.routes.filter(r=>r.dayPlan).length,2);
+    assert.equal(d.places.length,11);assert.equal(new Set(d.routes.map(r=>r.id)).size,5);assert.equal(d.routes.filter(r=>r.dayPlan).length,2);
     for(const lang of ['ru','ko']){
-      await go('destinations/burabay');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const hub=page.locator('[data-burabay-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),4);
-      await go('routes/burabay');assert.equal(await page.locator('[data-day-plan]').count(),2);assert.equal(await page.locator('.itinerary-card .access-badge').count(),3);
+      await go('destinations/burabay');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const hub=page.locator('[data-burabay-planning]');assert.equal(await hub.locator('[data-planning-choice]').count(),5);
+      await go('routes/burabay');assert.equal(await page.locator('[data-day-plan]').count(),2);assert.equal(await page.locator('.itinerary-card .access-badge').count(),4);
       const two=page.locator('[data-route-id="burabay-two-days"]');await two.locator('summary').first().click();const stay=two.locator('[data-stay-option]');await stay.locator('summary').click();const room=await stay.innerText();assert.match(room,/STANDARD TWIN/);assert.match(room,lang==='ru'?/собственные душ и санузел/:/전용 샤워실, 화장실/);assert.match(room,lang==='ru'?/не забронированный/:/예약된 객실은 아닙니다/);assert.match(room,lang==='ru'?/Корейское обслуживание и трансфер не подтверждены/:/한국어 응대와 이동 서비스도 확정하지/);assert.equal(await two.locator('.route-blocks > li').count(),2);
       const panorama=page.locator('[data-route-id="burabay-panorama"]');await panorama.locator('summary').click();assert.match(await panorama.innerText(),lang==='ru'?/Вход и обратный транспорт не подготовлены/:/입장 조건과 귀환 차량 미준비/);
       assert.equal(await page.locator('.itinerary-card a[href*="ybyrai-trail"], .itinerary-card a[href*="big-chebache"], .itinerary-card a[href*="botai"]').count(),0);
@@ -809,10 +809,10 @@ try {
       const content=await page.locator('.itinerary-grid').evaluate(el=>{const c=el.cloneNode(true);c.querySelectorAll('[lang="ru"]').forEach(n=>n.remove());return c.textContent;});assert.doesNotMatch(content,/[–—]/);if(lang==='ko')assert.doesNotMatch(content,/[А-Яа-яЁё]/);
     }
   });
-  await check('Four Burabay choices and seven place links preserve the chosen plan across reload and language changes',async()=>{
+  await check('Burabay choices and eight place links preserve the chosen plan across reload and language changes',async()=>{
     const{guideContent}=await import('../assets/content-pages.js');const d=guideContent.burabay;
     for(const c of d.planning.choices){await go('destinations/burabay');await page.locator(`[data-burabay-planning] [data-planning-choice="${c.id}"] a`).click();const card=page.locator(`[data-route-id="${c.routeId}"][open]`);await card.waitFor();await page.reload();await card.waitFor();const lang=await page.locator('html').getAttribute('lang');await page.locator(`[data-language="${lang==='ru'?'ko':'ru'}"]`).click();await card.waitFor();}
-    const linked=d.places.filter(p=>p.planLink);assert.equal(linked.length,7);for(const p of linked){await go('places/'+p.id);await page.locator('[data-place-plan]').click();await page.locator(`[data-route-id="${p.planLink.routeId}"][open]`).waitFor();}
+    const linked=d.places.filter(p=>p.planLink);assert.equal(linked.length,8);for(const p of linked){await go('places/'+p.id);await page.locator('[data-place-plan]').click();await page.locator(`[data-route-id="${p.planLink.routeId}"][open]`).waitFor();}
     await go('routes/burabay?plan=unknown');assert.equal(await page.locator('.itinerary-card[open]').count(),0);
     await go('places/burabay-ybyrai-trail');assert.equal(await page.locator('[data-place-plan]').count(),0);assert.match(await page.locator('.visit-facts').innerText(),/конечной точки|목적지까지/);await go('places/burabay-baitas');assert.match(await page.locator('.page-heading').innerText(),/без проживания пока не подтверждён|비투숙객 입장 조건이 확인되지/);
   });
@@ -930,6 +930,28 @@ try {
     await go('routes');await page.locator('[data-map-choice="ust-kamenogorsk"]').click();
     const marker=page.locator('.map-marker[data-map-target="ust-kamenogorsk"]');assert.equal(await marker.locator('text').getAttribute('text-anchor'),'middle');assert.equal(await marker.locator('text').getAttribute('x'),'0');assert.equal(await marker.locator('.map-label-leader').count(),1);
     await page.locator('.kazakhstan-map').screenshot({path:'test-results/map-labels-fixed.png'});
+  });
+  await check('Three-region additions keep distinct places, counts and visitor-language boundaries',async()=>{
+    const{guideContent,contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,110);assert.equal(guideContent.almaty.places.length,42);assert.equal(guideContent.astana.places.length,20);assert.equal(guideContent.burabay.places.length,11);
+    const ids=['almaty-tanbaly','astana-opera','astana-ballet','burabay-imanaev-creek'];for(const id of ids){const p=contentPlaces.find(p=>p.id===id);assert.ok(p);assert.deepEqual(p.sources,[]);assert.ok(p.planLink);for(const lang of ['ru','ko']){assert.doesNotMatch(p.copy.body[lang],/[\u2013\u2014]/);assert.ok(p.copy.card[lang].length>60);}}
+    const t=contentPlaces.find(p=>p.id==='almaty-tanbaly'),river=contentPlaces.find(p=>p.id==='almaty-tamgaly-tas');assert.notEqual(t.id,river.id);assert.match(t.visitor.price.ru,/2 000/);assert.match(t.visitor.access.ko,/영어/);assert.match(river.copy.body.ru,/разными местами/);
+  });
+  await check('Altyn Emel separates one route from two days and keeps lodging private facilities specific',async()=>{
+    await go('routes/almaty?plan=almaty-altyn-emel-visit');if(await page.locator('html').getAttribute('lang')!=='ru')await page.locator('[data-language="ru"]').click();const card=page.locator('[data-route-id="almaty-altyn-emel-visit"][open]');await card.waitFor();assert.equal(await card.locator('.steps >li').count(),2);assert.match(await card.innerText(),/только если выбрали оба/);await card.locator('[data-stay-option] summary').click();assert.match(await card.innerText(),/Golden Saddle Lodge/);assert.match(await card.innerText(),/собственной ванной/);assert.match(await card.innerText(),/не проверены/);
+    await go('places/almaty-altyn-emel');await page.locator('[data-place-plan]').click();await card.waitFor();assert.equal(await page.locator('.itinerary-card[open]').count(),1);
+  });
+  await check('Astana theatres offer booking actions rather than sources and one evening selects one venue',async()=>{
+    for(const id of ['astana-opera','astana-ballet']){await go('places/'+id);const action=page.locator('[data-visitor-action]');assert.equal(await action.count(),1);assert.match(await action.getAttribute('href'),/^https:\/\/astana(opera\.kz|ballet\.com)\//);assert.equal(await action.getAttribute('rel'),'noopener noreferrer');assert.equal(await page.locator('#sources,.source-links,a[href*="2gis"]').count(),0);await page.locator('[data-place-plan]').click();await page.locator('[data-route-id="astana-cultural-evening"][open]').waitFor();}
+    const card=page.locator('[data-route-id="astana-cultural-evening"]');assert.equal(await card.locator('.steps >li').count(),1);await card.locator('details').evaluateAll(ns=>ns.forEach(n=>n.open=true));assert.match(await card.innerText(),/два разных театра|두 곳을 같은 저녁/);assert.match(await card.innerText(),/\+82/);
+  });
+  await check('Burabay boardwalk update does not turn ascent or creek into an effortless ready walk',async()=>{
+    await go('places/burabay-bolektau');if(await page.locator('html').getAttribute('lang')!=='ru')await page.locator('[data-language="ru"]').click();assert.match(await page.locator('#overview').innerText(),/лестницы и настилы/);assert.match(await page.locator('#overview').innerText(),/не стал ровной/);
+    await go('places/burabay-imanaev-creek');assert.match(await page.locator('#transport').innerText(),/путь.*пока не предложен/);assert.match(await page.locator('.visit-facts').innerText(),/длиной прогулки/);assert.equal(await page.locator('button[data-copy]').count(),1);await page.locator('[data-place-plan]').click();await page.locator('[data-route-id="burabay-creek-option"][open]').waitFor();assert.match(await page.locator('[data-route-id="burabay-creek-option"]').innerText(),/Вход и обратный транспорт не подготовлены/);
+  });
+  await check('New regional choices, prices, theatre links and expanded plans fit RU KO mobile layouts',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){await page.setViewportSize({width,height:950});for(const route of ['destinations/almaty','destinations/astana','destinations/burabay','routes/almaty?plan=almaty-tanbaly-visit','routes/almaty?plan=almaty-altyn-emel-visit','routes/astana?plan=astana-cultural-evening','routes/burabay?plan=burabay-creek-option','places/almaty-tanbaly','places/astana-ballet','places/burabay-imanaev-creek']){await go(route);if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();if(route.startsWith('routes/'))await page.locator('.itinerary-card[open] details').evaluateAll(ns=>ns.forEach(n=>n.open=true));await noOverflow();if(lang==='ko')assert.doesNotMatch(await page.locator('#overview').count()?await page.locator('#overview').innerText():'',/[А-Яа-яЁё]/);}
+      if(width===390)await page.screenshot({path:`test-results/regional-creek-${lang}-mobile.png`,fullPage:true});}
+    await page.setViewportSize({width:1280,height:950});await go('routes/astana?plan=astana-cultural-evening');await page.locator('.itinerary-card[open] details').evaluateAll(ns=>ns.forEach(n=>n.open=true));await page.screenshot({path:'test-results/regional-theatre-desktop.png',fullPage:true});assert.deepEqual(failures,[]);
   });
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
