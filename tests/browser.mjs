@@ -898,8 +898,8 @@ try {
   });
   await check('Hover selections keep map and document geometry fixed across destinations',async()=>{
     await page.emulateMedia({reducedMotion:'reduce'});
-    for(const lang of ['ru','ko'])for(const width of [320,390,768,850,1024,1280]){
-      await page.setViewportSize({width,height:950});await go('routes');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('[data-flight-mode="domestic"]').click();await page.waitForFunction(()=>parseFloat(document.querySelector('#route-map-card').style.minHeight)>100);
+    for(const lang of ['ru','ko'])for(const width of [320,390,768,850,1024,1280])for(const mode of ['domestic','korea']){
+      await page.setViewportSize({width,height:950});await go('routes');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator(`[data-flight-mode="${mode}"]`).click();await page.waitForFunction(()=>parseFloat(document.querySelector('#route-map-card').style.minHeight)>100);
       let previous;
       for(const id of ['astana','burabay','almaty','ust-kamenogorsk','aktau','turkistan']){
         await page.locator(`[data-map-choice="${id}"]`).click();const dimensions=await page.evaluate(()=>{const r=s=>{const b=document.querySelector(s).getBoundingClientRect();return [b.top+scrollY,b.height]};return ['.flight-controls','#flight-hint','#flight-service','#route-map-card','.kazakhstan-map'].flatMap(r)});
@@ -910,11 +910,11 @@ try {
   });
   await check('A stationary pointer over Astana and Burabay causes no oscillation or scroll jumps',async()=>{
     await page.emulateMedia({reducedMotion:'no-preference'});await go('routes');await page.locator('[data-flight-mode="domestic"]').click();
-    for(const id of ['astana','burabay']){
+    for(const mode of ['domestic','korea']){await page.locator(`[data-flight-mode="${mode}"]`).click();for(const id of ['astana','burabay']){
       await page.locator(`.map-marker[data-map-target="${id}"] .marker-hit`).hover();await page.waitForFunction(expected=>document.querySelector('#route-map-card').dataset.destination===expected,id);
       const samples=await page.evaluate(async()=>{const rows=[];const start=performance.now();while(performance.now()-start<1500){const b=document.querySelector('.kazakhstan-map').getBoundingClientRect();rows.push({top:b.top,scroll:scrollY,id:document.querySelector('#route-map-card').dataset.destination});await new Promise(requestAnimationFrame);}return rows;});
       assert.ok(samples.length>10);assert.equal(new Set(samples.map(x=>x.id)).size,1);assert.equal(samples[0].id,id);assert.ok(Math.max(...samples.map(x=>x.top))-Math.min(...samples.map(x=>x.top))<1);assert.ok(Math.max(...samples.map(x=>x.scroll))-Math.min(...samples.map(x=>x.scroll))<1);
-    }
+    }}
   });
   await check('Korean departure requires explicit selection and unsupported pairs remain still',async()=>{
     await go('routes');await page.locator('[data-flight-mode="domestic"]').click();await page.locator('#flight-origin').selectOption('astana');
@@ -925,6 +925,11 @@ try {
     await page.locator('#flight-pick').click();await page.locator('[data-map-choice="almaty"]').click();assert.equal(await page.locator('#flight-origin').inputValue(),'gimhae');assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'almaty');
     await page.locator('#flight-pick').click();await page.locator('[data-map-cycle="1"]').click();assert.equal(await page.locator('#flight-origin').inputValue(),'gimhae');assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'astana');await page.keyboard.press('Escape');assert.deepEqual(failures,[]);
     await page.locator('.route-explorer').screenshot({path:'test-results/map-stability-desktop.png'});
+  });
+  await check('Oskemen label is centered above its own marker with a leader',async()=>{
+    await go('routes');await page.locator('[data-map-choice="ust-kamenogorsk"]').click();
+    const marker=page.locator('.map-marker[data-map-target="ust-kamenogorsk"]');assert.equal(await marker.locator('text').getAttribute('text-anchor'),'middle');assert.equal(await marker.locator('text').getAttribute('x'),'0');assert.equal(await marker.locator('.map-label-leader').count(),1);
+    await page.locator('.kazakhstan-map').screenshot({path:'test-results/map-labels-fixed.png'});
   });
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
