@@ -77,3 +77,6 @@ footer{border-top:1px solid var(--line);background:white;padding:28px 0;color:va
 @media(max-width:700px){.flight-controls{grid-template-columns:minmax(0,1fr) minmax(125px,145px)}.flight-controls label{grid-column:1;grid-row:1}.flight-swap{grid-column:2;grid-row:1;justify-self:end}.flight-pick{grid-column:1/-1;grid-row:3;min-width:0}.flight-distance{grid-column:2;grid-row:2;width:100%}.flight-arrival{grid-column:1;grid-row:2}.flight-arrival strong{min-height:74px}.flight-distance .flight-duration{min-height:40px}.flight-distance output{font-size:20px}}
 
 .map-label-leader{fill:none;stroke:#587984;stroke-width:1.5;pointer-events:none}.map-marker .map-label{pointer-events:none}
+
+/* A single visit should use the available reading width. */
+.day-plan>.steps:has(>li:only-child){grid-template-columns:1fr}
