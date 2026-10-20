@@ -80,3 +80,16 @@ footer{border-top:1px solid var(--line);background:white;padding:28px 0;color:va
 
 /* A single visit should use the available reading width. */
 .day-plan>.steps:has(>li:only-child){grid-template-columns:1fr}
+
+/* Almaty route reading view; other destinations keep their existing presentation. */
+.route-compact .route-lead{max-width:65ch;font-size:17px;line-height:1.65;margin:12px 0 18px}
+.route-compact .route-essential{border-left:3px solid var(--gold);padding:9px 14px;font-size:14px;line-height:1.6;background:var(--soft)}
+.route-compact>.fact-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px 0;border-block:1px solid var(--line)}
+.route-compact>.fact-grid>div{min-width:0}.route-compact>.fact-grid span{display:block;font-size:14px;line-height:1.5;margin-top:6px;overflow-wrap:anywhere}
+.route-compact>.steps{gap:22px;margin-block:20px}.route-compact>.steps>li>strong{font-size:12px;color:var(--muted)}
+.route-compact>.steps>li>a{font-size:17px;line-height:1.4}.route-compact>.steps>li>span{display:block;font-size:12px;margin-block:7px;color:var(--muted)}
+.route-compact>.steps>li>p{margin-block:8px 12px}.route-compact [data-stop-detail] summary{padding:9px 0;font-size:13px}.route-compact [data-stop-detail][open] summary{padding-left:10px}
+.route-return{padding:14px 16px;background:var(--soft);font-size:14px;line-height:1.6}.route-return>strong{display:block;margin-bottom:4px}
+.route-details{margin-top:18px}.route-details>.guide-answer{border-top:1px solid var(--line);border-bottom:0}.route-full-facts{margin:12px 0 0}.route-full-facts>div{margin-top:12px}.route-full-facts dt{font-weight:700}.route-full-facts dd{margin:4px 0 0}
+.route-help{margin-top:18px;font-size:14px}.route-compact .route-transport{padding:0}.route-compact .answer-body{font-size:14px}
+@media(max-width:650px){.route-compact>.fact-grid{grid-template-columns:1fr}.route-compact>.fact-grid>div+div{border-top:1px solid var(--line);padding-top:10px}.route-compact>.steps{gap:14px}.route-compact .route-lead{font-size:16px}.route-compact>.steps>li>a{font-size:16px}}
