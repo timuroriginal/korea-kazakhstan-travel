@@ -980,5 +980,24 @@ try {
       if(width===390)await page.screenshot({path:`test-results/first-day-ethno-${lang}.png`,fullPage:true});
     }assert.deepEqual(failures,[]);
   });
+  await check('Compact Almaty keeps short facts and return visible while full instructions remain accessible',async()=>{
+    const {guideContent}=await import('../assets/content-pages.js');
+    for(const lang of ['ru','ko'])for(const id of [...new Set(guideContent.almaty.routes.map(r=>r.id))]){
+      const route=guideContent.almaty.routes.find(r=>r.id===id);await go('routes/almaty?plan='+id);if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const card=page.locator(`[data-route-id="${id}"]`);assert.equal(await card.getAttribute('open'),'');assert.equal(await card.locator('.route-transport').count(),1);assert.equal(await card.locator('[data-route-logistics][open]').count(),0);assert.equal(await card.locator('[data-stop-detail][open]').count(),0);const full=await card.textContent();assert.ok(full.includes(route.copy.returnTransport[lang]));assert.ok(full.includes(route.copy.transport[lang]));for(const fact of route.dayPlan.facts)assert.ok(full.includes(fact.value[lang]));for(const stop of route.dayPlan.stops){assert.ok(full.includes(stop.note[lang]));assert.ok(full.includes(stop.next[lang]));}assert.equal(await card.locator('.route-return').isVisible(),true);assert.equal(await card.locator('.fact-grid').isVisible(),true);assert.equal(await card.locator('a[href*="myrealtrip"],a[href*="viator"],a[href*="asiatrip"]').count(),0);
+    }
+    await go('routes/astana');assert.equal(await page.locator('[data-compact-plan]').count(),0);await go('routes/burabay');assert.equal(await page.locator('[data-compact-plan]').count(),0);
+  });
+  await check('Compact stop disclosures open by keyboard and preserve Monday alternative and lake independence',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('routes/almaty?plan=route-1d');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const card=page.locator('[data-route-id="route-1d"]');const first=card.locator('[data-stop-detail]').first();assert.equal(await first.locator('.answer-body').isVisible(),false);await first.locator('summary').focus();await page.keyboard.press('Enter');assert.equal(await first.locator('.answer-body').isVisible(),true);assert.match(await card.locator('.route-essential').innerText(),lang==='ru'?/понедельникам/:/월요일/);
+      await go('routes/almaty?plan=route-3d-kolsai');const lakes=page.locator('[data-route-id="route-3d-kolsai"]');assert.match(await lakes.locator('.route-essential').innerText(),lang==='ru'?/два самостоятельных/:/각각 선택/);assert.match(await lakes.locator('.route-return').innerText(),/Саты|사티/);assert.equal(await lakes.locator('[data-stay-option][open]').count(),0);
+      await go('routes/almaty?plan=route-3d');assert.equal(await page.locator('[data-route-id="route-3d"] .mountain-season-notice').isVisible(),true);
+    }
+  });
+  await check('Compact Almaty fits narrow screens in default and fully expanded states',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280])for(const id of ['route-1d','route-3d-kolsai','almaty-altyn-emel-visit']){
+      await page.setViewportSize({width,height:950});await go('routes/almaty?plan='+id);if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await noOverflow();const card=page.locator(`[data-route-id="${id}"]`);if(width===390&&id==='route-1d')await card.screenshot({path:`test-results/compact-almaty-${lang}-mobile.png`});if(width===1280&&lang==='ru'&&id==='route-1d')await card.screenshot({path:'test-results/compact-almaty-ru-desktop.png'});await card.locator('details').evaluateAll(ns=>ns.forEach(n=>n.open=true));await noOverflow();
+    }assert.deepEqual(failures,[]);
+  });
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
