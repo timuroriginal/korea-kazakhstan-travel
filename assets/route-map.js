@@ -1,5 +1,5 @@
 import { koreaMapData } from './korea-map-data.js';
-import { koreanFlight } from './korea-flights.js';
+import { koreanFlight, koreaFlights } from './korea-flights.js';
 import { mapData } from './map-data.js';
 
 let selected='almaty';
@@ -105,7 +105,7 @@ export function mountRouteMap(lang,destinations,picture){
       distance.textContent=`≈ ${fmt(km*progress)} ${t('km','км')}`;
       if(service?.current)duration.textContent=timeText(Math.round(service.minutes*progress));
     }
-    if(motion.matches){paint(1);return;}
+    if(motion.matches||(isKorea&&!service?.current)){paint(1);return;}
     paint(0);const start=performance.now();
     function tick(now){if(!root.isConnected)return;const progress=Math.min(1,(now-start)/1100);paint(progress);if(progress<1)frame=requestAnimationFrame(tick);else frame=0;}
     frame=requestAnimationFrame(tick);
@@ -115,7 +115,22 @@ export function mountRouteMap(lang,destinations,picture){
   function setOriginMode(value){
     choosingOrigin=value;root.classList.toggle('choosing-origin',value);
     root.querySelector('#flight-pick').setAttribute('aria-pressed',String(value));
-    root.querySelector('#flight-pick').textContent=value?t('출발 도시를 누르세요 · 취소','Нажмите город отправления · отмена'):t('지도에서 출발지 선택','Выбрать отправление на карте');
+    root.querySelector('#flight-pick').textContent=value?(koreaAirports[origin]?t('한국의 공항을 누르세요 · 취소','Нажмите аэропорт Кореи · отмена'):t('출발 도시를 누르세요 · 취소','Нажмите город отправления · отмена')):t('지도에서 출발지 선택','Выбрать отправление на карте');
+  }
+  const cardMarkup=d=>`${picture(d.id,d.name[lang])}<div class="map-card-content"><span class="eyebrow">${t('여행지 탐색','Ваше направление')}</span><h3>${escape(d.name[lang])}</h3><p>${escape(d.eyebrow[lang])}</p><p class="map-region-note">${escape(regionLabels[d.id][lang])}</p><a class="button primary" href="#/routes/${d.id}">${root.classList.contains('map-home')?t('여행 일정 둘러보기','Исследовать маршруты'):t('이 여행지의 일정 보기','Открыть маршруты направления')} →</a></div>`;
+  function reserveGeometry(){
+    if(!root.isConnected)return;
+    const card=root.querySelector('#route-map-card'),hint=root.querySelector('#flight-hint'),service=root.querySelector('#flight-service');
+    const measure=document.createElement('div');measure.className='map-size-measure';measure.setAttribute('aria-hidden','true');measure.inert=true;
+    root.append(measure);
+    const tallest=(className,width,html)=>{measure.style.width=`${width}px`;let height=0;for(const content of html){const item=document.createElement('div');item.className=className;item.innerHTML=content;measure.append(item);height=Math.max(height,item.getBoundingClientRect().height);item.remove();}return Math.ceil(height);};
+    const cardHeight=tallest('map-card-size',card.getBoundingClientRect().width,destinations.map(cardMarkup));card.style.minHeight=`${cardHeight}px`;
+    const longestHint=t('직항편의 예정 소요 시간입니다. 공항 대기와 시내 이동은 포함하지 않습니다. 여행 날짜에 따라 달라집니다. 부산 노선은 계절 운항입니다.','Ориентир по расписанию прямого рейса. Без ожидания в аэропорту и дороги в город. На ваши даты время может отличаться. Направление из Пусана сезонное.');
+    const otherHints=[longestHint,t('지도에 마우스를 올리거나 목적지를 누르세요. 거리와 비행기가 함께 움직입니다. 부라바이: 콕셰타우 공항까지 계산하며 육로 구간은 제외합니다.','Наведите на город или нажмите: самолётик и расстояние изменятся вместе. Бурабай: расчёт до аэропорта Кокшетау; наземный участок не включён.'),t('이 두 공항 간 직항은 확인되지 않았습니다. 거리는 비교용이며 환승 시간은 포함하지 않습니다.','Прямой рейс между этими аэропортами не подтверждён. Расстояние показано для сравнения, время пересадки не рассчитано.')];
+    hint.style.minHeight=`${tallest('flight-hint',hint.getBoundingClientRect().width,otherHints.map(escape))}px`;
+    const services=koreaFlights.map(f=>`${escape(f.carrier)} · ${f.flight}${f.seasonal?' · '+t('계절 운항','Сезонный рейс'):''} · <a>${t('항공사에서 일정 보기','Расписание авиакомпании')} ↗</a>`);
+    service.style.minHeight=`${tallest('flight-service',service.getBoundingClientRect().width,services)}px`;
+    measure.remove();
   }
   function choose(id,announce=false){
     const d=destinations.find(d=>d.id===id);if(!d)return;
@@ -125,7 +140,7 @@ export function mountRouteMap(lang,destinations,picture){
     const card=root.querySelector('#route-map-card');
     if(changed||card.dataset.destination!==id){
       card.dataset.destination=id;
-      card.innerHTML=`${picture(d.id,d.name[lang])}<div class="map-card-content"><span class="eyebrow">${t('여행지 탐색','Ваше направление')}</span><h3>${escape(d.name[lang])}</h3><p>${escape(d.eyebrow[lang])}</p><p class="map-region-note">${escape(regionLabels[id][lang])}</p><a class="button primary" href="#/routes/${id}">${root.classList.contains('map-home')?t('여행 일정 둘러보기','Исследовать маршруты'):t('이 여행지의 일정 보기','Открыть маршруты направления')} →</a></div>`;
+      card.innerHTML=cardMarkup(d);
     }
     root.querySelector('#map-position').textContent=`${destinations.findIndex(d=>d.id===id)+1} / ${destinations.length}`;
     drawFlight();
@@ -133,25 +148,27 @@ export function mountRouteMap(lang,destinations,picture){
   }
   root.addEventListener('pointerover',event=>{
     const kr=event.target.closest('[data-korea-region]');if(kr){const region=koreaMapData.shapes.find(s=>s.code===kr.dataset.koreaRegion);root.querySelector('#korea-region-name').textContent=region?region.name[lang]:'';}
-    const krOrigin=event.target.closest('[data-korea-origin]');if(krOrigin&&!choosingOrigin&&event.pointerType!=='touch'&&origin!==krOrigin.dataset.koreaOrigin){if(!koreaAirports[origin])domesticOrigin=origin;origin=krOrigin.dataset.koreaOrigin;drawFlight();}
     const target=event.target.closest('[data-map-target]');
     if(target&&!choosingOrigin&&event.pointerType!=='touch'&&selected!==target.dataset.mapTarget)choose(target.dataset.mapTarget);
   });
   root.addEventListener('click',event=>{
-    const mode=event.target.closest('[data-flight-mode]');if(mode){if(mode.dataset.flightMode==='korea'){if(!koreaAirports[origin]){domesticOrigin=origin;origin='incheon';}}else origin=domesticOrigin;setOriginMode(false);drawFlight();return;}
-    const krOrigin=event.target.closest('[data-korea-origin]');if(krOrigin){if(!koreaAirports[origin])domesticOrigin=origin;origin=krOrigin.dataset.koreaOrigin;setOriginMode(false);drawFlight();return;}
+    const mode=event.target.closest('[data-flight-mode]');if(mode){if(mode.dataset.flightMode==='korea'){if(!koreaAirports[origin]){domesticOrigin=origin;origin='incheon';}}else origin=domesticOrigin;setOriginMode(false);if(mode.dataset.flightMode==='korea'&&!koreanFlight(origin,selected))choose('almaty',true);else drawFlight();return;}
+    const krOrigin=event.target.closest('[data-korea-origin]');if(krOrigin){if(!koreaAirports[origin])domesticOrigin=origin;origin=krOrigin.dataset.koreaOrigin;setOriginMode(false);if(!koreanFlight(origin,selected)&&selected!=='almaty')choose('almaty',true);else drawFlight();return;}
     if(event.target.closest('#flight-pick')){setOriginMode(!choosingOrigin);return;}
     if(event.target.closest('#flight-swap')){if(koreaAirports[origin])return;const previous=origin;origin=selected;setOriginMode(false);choose(previous,true);return;}
     const target=event.target.closest('[data-map-target],[data-map-choice],[data-map-cycle]');if(!target)return;
+    if(choosingOrigin&&koreaAirports[origin]&&!target.dataset.mapCycle){setOriginMode(false);choose(target.dataset.mapChoice||target.dataset.mapTarget,true);return;}
     if(choosingOrigin&&!target.dataset.mapCycle){origin=target.dataset.mapChoice||target.dataset.mapTarget;domesticOrigin=origin;setOriginMode(false);drawFlight();root.querySelector('#map-announcement').textContent=t('출발: ','Откуда: ')+name(origin);return;}
     if(target.dataset.mapCycle){const i=destinations.findIndex(d=>d.id===selected);choose(destinations[(i+Number(target.dataset.mapCycle)+destinations.length)%destinations.length].id,true);}
     else choose(target.dataset.mapChoice||target.dataset.mapTarget,true);
   });
   root.addEventListener('focusin',event=>{if(!choosingOrigin&&event.target.matches('[data-map-choice]'))choose(event.target.dataset.mapChoice,true);});
-  root.querySelector('#flight-origin').addEventListener('change',event=>{origin=event.target.value;if(!koreaAirports[origin])domesticOrigin=origin;setOriginMode(false);drawFlight();});
+  root.querySelector('#flight-origin').addEventListener('change',event=>{origin=event.target.value;if(!koreaAirports[origin])domesticOrigin=origin;setOriginMode(false);if(koreaAirports[origin]&&!koreanFlight(origin,selected))choose('almaty',true);else drawFlight();});
   root.addEventListener('keydown',event=>{if(event.key==='Escape')setOriginMode(false);});
   const onMotion=()=>drawFlight(true);motion.addEventListener('change',onMotion);
   const onSize=()=>{arrange();drawFlight(true);};small.addEventListener('change',onSize);
-  choose(selected);
-  return ()=>{cancelAnimationFrame(frame);clearTimeout(finishTimer);motion.removeEventListener('change',onMotion);small.removeEventListener('change',onSize);};
+  choose(selected);reserveGeometry();
+  let geometryWidth=root.getBoundingClientRect().width;
+  const geometryObserver=new ResizeObserver(()=>{const width=root.getBoundingClientRect().width;if(Math.abs(width-geometryWidth)>.5){geometryWidth=width;reserveGeometry();}});geometryObserver.observe(root);
+  return ()=>{geometryObserver.disconnect();cancelAnimationFrame(frame);clearTimeout(finishTimer);motion.removeEventListener('change',onMotion);small.removeEventListener('change',onSize);};
 }
