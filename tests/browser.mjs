@@ -828,7 +828,7 @@ try {
     for(const lang of ['ru','ko']){
       await go('destinations/ust-kamenogorsk');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const hub=page.locator('[data-destination-planning="ust-kamenogorsk"]');assert.equal(await hub.locator('[data-planning-choice]').count(),6);
       await go('routes/ust-kamenogorsk?plan=oskemen-route-city');const city=page.locator('[data-route-id="oskemen-route-city"][open]');await city.waitFor();assert.equal(await city.locator('.steps > li').count(),3);assert.match(await city.innerText(),lang==='ru'?/конин/:/말고기/);assert.equal(await city.locator('button[data-copy*="59Б"]').count(),1);assert.match(await city.innerText(),/Yandex Go/);
-      const ethno=page.locator('[data-route-id="oskemen-route-ethno"]');await ethno.locator(':scope > summary').click();assert.match(await ethno.innerText(),lang==='ru'?/Вход и обратный транспорт не подготовлены/:/입장 조건과 귀환 차량 미준비/);assert.match(await ethno.innerText(),lang==='ru'?/понедельник санитарный/:/월요일은 정비일/);assert.equal(await ethno.locator('.route-blocks > li').count(),2);
+      const ethno=page.locator('[data-route-id="oskemen-route-ethno"]');await ethno.locator(':scope > summary').click();assert.match(await ethno.innerText(),lang==='ru'?/Вход и обратный транспорт не подготовлены/:/입장 조건과 귀환 차량 미준비/);assert.match(await ethno.innerText(),lang==='ru'?/[Пп]онедельник санитарный/:/월요일은 정비일/);assert.equal(await ethno.locator('.route-blocks > li').count(),2);
       const ak=page.locator('[data-route-id="oskemen-route-akbaur"]');await ak.locator('summary').click();assert.match(await ak.innerText(),lang==='ru'?/Вход и обратный транспорт не подготовлены/:/입장 조건과 귀환 차량 미준비/);
       const katon=page.locator('[data-route-id="oskemen-route-katon"]');await katon.locator('summary').click();assert.equal(await katon.locator('.route-blocks > li').count(),3);assert.match(await katon.innerText(),/MUZ TAU/);assert.match(await katon.innerText(),lang==='ru'?/Стыковка с вылетом не включена/:/항공편 연결은 포함하지/);
       const raw=await page.locator('.itinerary-grid').evaluate(el=>{let c=el.cloneNode(true);c.querySelectorAll('[lang="ru"]').forEach(n=>n.remove());return c.textContent;});assert.doesNotMatch(raw,/[–—]|Копировать фразу|문구 복사/);if(lang==='ko')assert.doesNotMatch(raw,/[А-Яа-яЁё]/);
@@ -952,6 +952,33 @@ try {
     for(const lang of ['ru','ko'])for(const width of [320,390,1280]){await page.setViewportSize({width,height:950});for(const route of ['destinations/almaty','destinations/astana','destinations/burabay','routes/almaty?plan=almaty-tanbaly-visit','routes/almaty?plan=almaty-altyn-emel-visit','routes/astana?plan=astana-cultural-evening','routes/burabay?plan=burabay-creek-option','places/almaty-tanbaly','places/astana-ballet','places/burabay-imanaev-creek']){await go(route);if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();if(route.startsWith('routes/'))await page.locator('.itinerary-card[open] details').evaluateAll(ns=>ns.forEach(n=>n.open=true));await noOverflow();if(lang==='ko')assert.doesNotMatch(await page.locator('#overview').count()?await page.locator('#overview').innerText():'',/[А-Яа-яЁё]/);}
       if(width===390)await page.screenshot({path:`test-results/regional-creek-${lang}-mobile.png`,fullPage:true});}
     await page.setViewportSize({width:1280,height:950});await go('routes/astana?plan=astana-cultural-evening');await page.locator('.itinerary-card[open] details').evaluateAll(ns=>ns.forEach(n=>n.open=true));await page.screenshot({path:'test-results/regional-theatre-desktop.png',fullPage:true});assert.deepEqual(failures,[]);
+  });
+  await check('Arrival research keeps SMS-dependent airport networks separate from proven Korean access',async()=>{
+    for(const lang of ['ru','ko'])for(const [city,network] of [['astana','OpenWiFi_NQZ'],['aktau','kSpot KazTransCom'],['ust-kamenogorsk','Wi-Fi']]){
+      await go('destinations/'+city);if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();
+      const arrivals=page.locator('#transport [data-practical-id]');await arrivals.evaluateAll(ns=>ns.forEach(n=>n.open=true));const body=await page.locator('#transport').innerText();assert.ok(body.includes(network));assert.match(body,lang==='ru'?/не проверен|не установлены/:/확인되지/);assert.equal(await page.locator('#sources,.source-links').count(),0);
+    }
+  });
+  await check('First-day preparation distinguishes data-only SMS and iPhone language scope without card guarantees',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('prepare/transport');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('details').evaluateAll(ns=>ns.forEach(n=>n.open=true));const copy=await page.locator('#content').innerText();assert.match(copy,/iPhone/);assert.match(copy,lang==='ru'?/Отправленная заявка ещё не означает/:/문의 양식만/);assert.match(copy,lang==='ru'?/не принимает обычные SMS/:/일반 문자를 받을 수 없습니다/);assert.doesNotMatch(copy,/местной 3D|местной3D|регулярно отклон/);
+      await go('prepare/connection');await page.locator('details').evaluateAll(ns=>ns.forEach(n=>n.open=true));assert.match(await page.locator('#content').innerText(),lang==='ru'?/не включает обычные звонки и SMS/:/일반 통화와 문자를 제공하지 않습니다/);
+    }
+  });
+  await check('Road closure and cable maintenance stay distinct and ethno hours agree on profile and plan',async()=>{
+    for(const lang of ['ru','ko']){
+      await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('.itinerary-card').evaluateAll(ns=>ns.forEach(n=>n.open=true));const notice=await page.locator('.mountain-season-notice').first().innerText();assert.match(notice,/22/);assert.match(notice,/2026/);assert.match(notice,lang==='ru'?/1 ноября/:/11월 1일/);assert.match(notice,lang==='ru'?/машин и пешеходов/:/차량과 보행자/);
+      await go('places/oskemen-ethnopark');const hours=await page.locator('.visit-facts').innerText();assert.match(hours,/17:00/);assert.match(hours,/21:00/);assert.match(hours,/20:00/);assert.equal(await page.locator('.address-box button').count(),0);
+      await go('routes/ust-kamenogorsk?plan=oskemen-route-ethno');const plan=page.locator('[data-route-id="oskemen-route-ethno"]');await plan.locator('details').evaluateAll(ns=>ns.forEach(n=>n.open=true));assert.match(await plan.innerText(),/17:00/);
+    }
+  });
+  await check('Research updates fit open RU KO disclosures on small screens',async()=>{
+    for(const lang of ['ru','ko'])for(const width of [320,390,1280]){
+      await page.setViewportSize({width,height:950});for(const route of ['prepare/transport','prepare/connection','destinations/astana','destinations/aktau','destinations/ust-kamenogorsk','places/almaty-gorelnik','places/oskemen-ethnopark']){
+        await go(route);if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('details').evaluateAll(ns=>ns.forEach(n=>n.open=true));await noOverflow();
+      }
+      if(width===390)await page.screenshot({path:`test-results/first-day-ethno-${lang}.png`,fullPage:true});
+    }assert.deepEqual(failures,[]);
   });
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
