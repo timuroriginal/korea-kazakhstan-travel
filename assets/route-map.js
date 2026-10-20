@@ -36,7 +36,7 @@ const regionLabels={
   turkistan:{ru:'Туркестан · Туркестанская область',ko:'투르키스탄 · 투르키스탄주'}
 };
 // Offsets are for annotation placement only; marker positions come from GeoNames.
-const labelOffsets={almaty:[12,28],astana:[16,30],aktau:[16,-17],'ust-kamenogorsk':[-17,-16],burabay:[-15,-21],turkistan:[-15,26]};
+const labelOffsets={almaty:[12,28],astana:[16,30],aktau:[16,-17],'ust-kamenogorsk':[0,-33],burabay:[-15,-21],turkistan:[-15,26]};
 
 export function routeMapMarkup(lang,destinations,picture,{home=false}={}){
   const t=(ko,ru)=>lang==='ko'?ko:ru;
@@ -47,7 +47,7 @@ export function routeMapMarkup(lang,destinations,picture,{home=false}={}){
   const shapes=mapData.shapes.map(shape=>`<path class="map-area${regionTargets[shape.code]?' map-target':''}" data-region="${shape.code}"${regionTargets[shape.code]?` data-map-target="${regionTargets[shape.code]}"`:''} d="${shape.path}"><title>${escape(shape.name)}</title></path>`).join('');
   const markers=destinations.map(d=>{
     const p=mapData.points[d.id],offset=labelOffsets[d.id];
-    return `<g class="map-marker" data-map-target="${d.id}" transform="translate(${p.x} ${p.y})"><circle class="marker-hit" r="23"/><circle class="marker-halo" r="15"/><circle class="marker-dot" r="6"/><text x="${offset[0]}" y="${offset[1]}" text-anchor="${offset[0]<0?'end':'start'}" class="map-label">${escape(tr(d.name))}</text></g>`;
+    return `<g class="map-marker" data-map-target="${d.id}" transform="translate(${p.x} ${p.y})"><circle class="marker-hit" r="23"/><circle class="marker-halo" r="15"/><circle class="marker-dot" r="6"/>${d.id==='ust-kamenogorsk'?'<path class="map-label-leader" d="M0,-9 V-24"/>':''}<text x="${offset[0]}" y="${offset[1]}" text-anchor="${offset[0]===0?'middle':offset[0]<0?'end':'start'}" class="map-label">${escape(tr(d.name))}</text></g>`;
   }).join('');
   const koreanShapes=koreaMapData.shapes.map(shape=>`<path class="korea-area" data-korea-region="${shape.code}"${['KR-11','KR-28'].includes(shape.code)?' data-korea-origin="incheon"':shape.code==='KR-26'?' data-korea-origin="gimhae"':''} d="${shape.path}"><title>${escape(shape.name.ko)} · ${escape(shape.name.ru)}</title></path>`).join('');
   const koreanCities=koreaMapData.cities.map(c=>`<g class="korea-city" transform="translate(${c.x} ${c.y})"><circle r="2.7"/><text x="${c.dx}" y="${c.dy}" text-anchor="${c.dx<0?'end':'start'}">${escape(tr(c.name))}</text></g>`).join('');
@@ -130,6 +130,11 @@ export function mountRouteMap(lang,destinations,picture){
     hint.style.minHeight=`${tallest('flight-hint',hint.getBoundingClientRect().width,otherHints.map(escape))}px`;
     const services=koreaFlights.map(f=>`${escape(f.carrier)} · ${f.flight}${f.seasonal?' · '+t('계절 운항','Сезонный рейс'):''} · <a>${t('항공사에서 일정 보기','Расписание авиакомпании')} ↗</a>`);
     service.style.minHeight=`${tallest('flight-service',service.getBoundingClientRect().width,services)}px`;
+    // Reserve both scheduled and unsupported-flight copy, not just domestic controls.
+    const controls=root.querySelector('.flight-controls'),clone=controls.cloneNode(true);clone.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));clone.style.minHeight='0';measure.style.width=`${controls.getBoundingClientRect().width}px`;measure.append(clone);
+    const arrival=clone.querySelector('.flight-arrival strong'),time=clone.querySelector('.flight-duration');let controlsHeight=0;
+    for(const d of destinations)for(const text of [timeText(465),t('운항편별 시간 확인','По расписанию выбранного рейса'),t('운항편에 따라 다름','Зависит от рейса')]){arrival.textContent=d.name[lang];time.textContent=text;controlsHeight=Math.max(controlsHeight,clone.getBoundingClientRect().height);}
+    controls.style.minHeight=`${Math.ceil(controlsHeight)}px`;
     measure.remove();
   }
   function choose(id,announce=false){
