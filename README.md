@@ -240,3 +240,9 @@ The shared route explorer retains the original 20 Kazakhstan regions, six destin
 Airport arrival notes now distinguish SMS-gated Wi-Fi in Astana and Aktau from a tested login with a Korean number. Oskemen's advertised free network is described without assuming its authentication method. Shared taxi preparation scopes the published language list to iPhone, separates data-only eSIM from SMS, and treats a transfer request as distinct from a confirmed pickup. Existing foreign-card, IMEI and Burabay last-mile limitations remain.
 
 The Gorelnik road closure is separate from cable maintenance in the mountain plan and place page. Ethno-village hours are separate from the wider Left Bank complex on both the place and route. The Korean Kok-Tobe station address has been completed. These notes do not establish live +82 delivery, Korean-card payment, airport pickup zones or a fully bookable fallback. Research evidence stays in the private workspace.
+
+### Compact Almaty route reading view
+
+Almaty's six route groups now start with a short independently adapted RU/KO outline, time, movement/effort and cost categories. Stops retain their names and times; full visit and transition instructions open within each stop. The return plan and material access/seasonal restrictions remain visible, while food, lodging, detailed transport and the original full format stay in disclosures. Existing plan links and route identities are preserved on both destination and route pages.
+
+Presentation lives in `assets/almaty-route-view.js`; original content data and the other five destinations are unchanged. No tour-company promotions or booking links were added. All 111 browser acceptance checks passed, including hidden-detail access by keyboard, six full-plan preservation checks in both languages, direct links and mobile layouts.
