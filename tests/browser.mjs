@@ -896,5 +896,35 @@ try {
     const c=await browser.newContext({viewport:{width:390,height:900},hasTouch:true,isMobile:true,reducedMotion:'reduce'});const p=await c.newPage();p.on('pageerror',e=>failures.push(e.message));await p.goto(base+'/#/routes');await p.locator('.korea-airport[data-korea-origin="gimhae"] .marker-hit').tap();assert.equal(await p.locator('#flight-origin').inputValue(),'gimhae');await p.locator('[data-map-choice="almaty"]').tap();assert.equal(await p.locator('#route-map-card').getAttribute('data-destination'),'almaty');await c.close();
     await page.setViewportSize({width:1280,height:900});await page.locator('[data-flight-mode="domestic"]').click();assert.deepEqual(failures,[]);
   });
+  await check('Hover selections keep map and document geometry fixed across destinations',async()=>{
+    await page.emulateMedia({reducedMotion:'reduce'});
+    for(const lang of ['ru','ko'])for(const width of [320,390,768,850,1024,1280]){
+      await page.setViewportSize({width,height:950});await go('routes');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('[data-flight-mode="domestic"]').click();await page.waitForFunction(()=>parseFloat(document.querySelector('#route-map-card').style.minHeight)>100);
+      let previous;
+      for(const id of ['astana','burabay','almaty','ust-kamenogorsk','aktau','turkistan']){
+        await page.locator(`[data-map-choice="${id}"]`).click();const dimensions=await page.evaluate(()=>{const r=s=>{const b=document.querySelector(s).getBoundingClientRect();return [b.top+scrollY,b.height]};return ['.flight-controls','#flight-hint','#flight-service','#route-map-card','.kazakhstan-map'].flatMap(r)});
+        if(previous)dimensions.forEach((v,i)=>assert.ok(Math.abs(v-previous[i])<1.1,`${lang}/${width}/${id} geometry ${i}: ${v} vs ${previous[i]}`));previous=dimensions;await noOverflow();
+      }
+    }
+    await page.setViewportSize({width:1280,height:950});
+  });
+  await check('A stationary pointer over Astana and Burabay causes no oscillation or scroll jumps',async()=>{
+    await page.emulateMedia({reducedMotion:'no-preference'});await go('routes');await page.locator('[data-flight-mode="domestic"]').click();
+    for(const id of ['astana','burabay']){
+      await page.locator(`.map-marker[data-map-target="${id}"] .marker-hit`).hover();await page.waitForFunction(expected=>document.querySelector('#route-map-card').dataset.destination===expected,id);
+      const samples=await page.evaluate(async()=>{const rows=[];const start=performance.now();while(performance.now()-start<1500){const b=document.querySelector('.kazakhstan-map').getBoundingClientRect();rows.push({top:b.top,scroll:scrollY,id:document.querySelector('#route-map-card').dataset.destination});await new Promise(requestAnimationFrame);}return rows;});
+      assert.ok(samples.length>10);assert.equal(new Set(samples.map(x=>x.id)).size,1);assert.equal(samples[0].id,id);assert.ok(Math.max(...samples.map(x=>x.top))-Math.min(...samples.map(x=>x.top))<1);assert.ok(Math.max(...samples.map(x=>x.scroll))-Math.min(...samples.map(x=>x.scroll))<1);
+    }
+  });
+  await check('Korean departure requires explicit selection and unsupported pairs remain still',async()=>{
+    await go('routes');await page.locator('[data-flight-mode="domestic"]').click();await page.locator('#flight-origin').selectOption('astana');
+    await page.locator('.korea-airport[data-korea-origin="gimhae"] .marker-hit').hover();assert.equal(await page.locator('#flight-origin').inputValue(),'astana');
+    await page.locator('[data-map-choice="burabay"]').click();await page.locator('[data-flight-mode="korea"]').click();assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'almaty');assert.equal(await page.locator('#flight-origin').inputValue(),'incheon');
+    await page.locator('.korea-airport[data-korea-origin="gimhae"] .marker-hit').hover();assert.equal(await page.locator('#flight-origin').inputValue(),'incheon');await page.locator('.korea-airport[data-korea-origin="gimhae"] .marker-hit').click();assert.equal(await page.locator('#flight-origin').inputValue(),'gimhae');
+    await page.locator('[data-map-choice="astana"]').click();const text=await page.locator('#flight-distance').innerText();await page.waitForTimeout(160);assert.equal(await page.locator('#flight-distance').innerText(),text);assert.equal(await page.locator('.flight-plane').isVisible(),false);
+    await page.locator('#flight-pick').click();await page.locator('[data-map-choice="almaty"]').click();assert.equal(await page.locator('#flight-origin').inputValue(),'gimhae');assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'almaty');
+    await page.locator('#flight-pick').click();await page.locator('[data-map-cycle="1"]').click();assert.equal(await page.locator('#flight-origin').inputValue(),'gimhae');assert.equal(await page.locator('#route-map-card').getAttribute('data-destination'),'astana');await page.keyboard.press('Escape');assert.deepEqual(failures,[]);
+    await page.locator('.route-explorer').screenshot({path:'test-results/map-stability-desktop.png'});
+  });
   process.stdout.write(`Completed ${count} acceptance checks.\n`);
 } finally { await browser.close(); }
