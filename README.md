@@ -246,3 +246,8 @@ The Gorelnik road closure is separate from cable maintenance in the mountain pla
 Almaty's six route groups now start with a short independently adapted RU/KO outline, time, movement/effort and cost categories. Stops retain their names and times; full visit and transition instructions open within each stop. The return plan and material access/seasonal restrictions remain visible, while food, lodging, detailed transport and the original full format stay in disclosures. Existing plan links and route identities are preserved on both destination and route pages.
 
 Presentation lives in `assets/almaty-route-view.js`; original content data and the other five destinations are unchanged. No tour-company promotions or booking links were added. All 111 browser acceptance checks passed, including hidden-detail access by keyboard, six full-plan preservation checks in both languages, direct links and mobile layouts.
+
+
+## Образец «Алматы. Своя поездка», 21 октября 2026
+
+Раздел guides/almaty/ встроен в страницы Алматы и его маршрутов. RU/KO, пять полных дней плюс прилёт и вылет, варианты города/Чарына и озёр, календарь, шесть ночёвок, пользовательский расчёт расходов, автономный HTML и печать. Язык передаётся из сайта, есть обратный переход к местам. Это редакционный образец без оплаты и бронирований; неподтверждённая логистика обозначена. Исходники и сборка: guides/almaty/README.md. Проверки: tests/product.mjs. Основная ветка и коммерческий запуск не входят в этот этап.
