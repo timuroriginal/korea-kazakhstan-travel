@@ -53,7 +53,7 @@ export const guideContent = {
             "labelKo": "Kazakhstan.travel: 판필로프 공원"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/70000001113485529",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%9F%D0%B0%D1%80%D0%BA%20%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8%2028%20%D0%B3%D0%B2%D0%B0%D1%80%D0%B4%D0%B5%D0%B9%D1%86%D0%B5%D0%B2-%D0%BF%D0%B0%D0%BD%D1%84%D0%B8%D0%BB%D0%BE%D0%B2%D1%86%D0%B5%D0%B2%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -151,7 +151,7 @@ export const guideContent = {
             "labelKo": "승천 대성당: 연락처"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000794138",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%92%D0%BE%D0%B7%D0%BD%D0%B5%D1%81%D0%B5%D0%BD%D1%81%D0%BA%D0%B8%D0%B9%20%D0%BA%D0%B0%D1%84%D0%B5%D0%B4%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D1%81%D0%BE%D0%B1%D0%BE%D1%80%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -249,7 +249,7 @@ export const guideContent = {
             "labelKo": "Welcome.kz: 그린 바자르"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000795620",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%97%D0%B5%D0%BB%D1%91%D0%BD%D1%8B%D0%B9%20%D0%B1%D0%B0%D0%B7%D0%B0%D1%80%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -344,7 +344,7 @@ export const guideContent = {
             "labelKo": "Open Almaty와 시청 안내: 공원 전체 폐쇄"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/70000001033029108",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%9F%D0%B0%D1%80%D0%BA%20%D0%9F%D0%B5%D1%80%D0%B2%D0%BE%D0%B3%D0%BE%20%D0%9F%D1%80%D0%B5%D0%B7%D0%B8%D0%B4%D0%B5%D0%BD%D1%82%D0%B0%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -442,7 +442,7 @@ export const guideContent = {
             "status": "Подтверждено источником"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940001163496",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%A8%D1%8B%D0%BC%D0%B1%D1%83%D0%BB%D0%B0%D0%BA%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -543,7 +543,7 @@ export const guideContent = {
             "labelKo": "콕토베: 이동 방식과 티켓"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/70000001017272265",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%9A%D0%B0%D0%BD%D0%B0%D1%82%D0%BD%D0%B0%D1%8F%20%D0%B4%D0%BE%D1%80%D0%BE%D0%B3%D0%B0%20%D0%9A%D0%BE%D0%BA-%D0%A2%D0%BE%D0%B1%D0%B5%2C%20%D0%94%D0%BE%D1%81%D1%82%D1%8B%D0%BA%20104%D0%91%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -641,7 +641,7 @@ export const guideContent = {
             "labelKo": "문화유산 목록: 중앙 모스크 위치"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000865286",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%A6%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F%20%D0%BC%D0%B5%D1%87%D0%B5%D1%82%D1%8C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены; 2ГИС и другие справочники дают разные часы; режим туристического посещения неизвестен",
         "copy": {
@@ -745,7 +745,7 @@ export const guideContent = {
             "labelKo": "중앙공원: 출입, 시설과 연락처"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000895897",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%A6%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D0%BF%D0%B0%D1%80%D0%BA%20%D0%BE%D1%82%D0%B4%D1%8B%D1%85%D0%B0%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -855,7 +855,7 @@ export const guideContent = {
             "labelKo": "국립 중앙박물관: 요금과 운영 시간"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000802129",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%9D%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D1%86%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D0%BC%D1%83%D0%B7%D0%B5%D0%B9%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B8%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -965,7 +965,7 @@ export const guideContent = {
             "labelKo": "알마티 동물원: 요금, 시간과 전시관"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000792222",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D0%B8%D0%BD%D1%81%D0%BA%D0%B8%D0%B9%20%D0%B7%D0%BE%D0%BE%D0%BF%D0%B0%D1%80%D0%BA%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -1075,7 +1075,7 @@ export const guideContent = {
             "labelKo": "카스테예프 미술관: 공식 FAQ"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000798271",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%9D%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D0%BC%D1%83%D0%B7%D0%B5%D0%B9%20%D0%B8%D1%81%D0%BA%D1%83%D1%81%D1%81%D1%82%D0%B2%20%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8%20%D0%9A%D0%B0%D1%81%D1%82%D0%B5%D0%B5%D0%B2%D0%B0%2C%20%D0%9A%D0%BE%D0%BA%D1%82%D0%B5%D0%BC-3%2C%2022%2F1%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -1250,7 +1250,7 @@ export const guideContent = {
             "labelKo": "아바이 극장: 공연표와 연락처"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000794587",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D0%BA%D0%B8%D0%B9%20%D0%BD%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%20%D1%82%D0%B5%D0%B0%D1%82%D1%80%20%D0%BE%D0%BF%D0%B5%D1%80%D1%8B%20%D0%B8%20%D0%B1%D0%B0%D0%BB%D0%B5%D1%82%D0%B0%20%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8%20%D0%90%D0%B1%D0%B0%D1%8F%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -1348,7 +1348,7 @@ export const guideContent = {
             "labelKo": "이흘라스 박물관: 2026년 3월 운영 변경"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000798274",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%9C%D1%83%D0%B7%D0%B5%D0%B9%20%D0%BD%D0%B0%D1%80%D0%BE%D0%B4%D0%BD%D1%8B%D1%85%20%D0%BC%D1%83%D0%B7%D1%8B%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85%20%D0%B8%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%BE%D0%B2%20%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8%20%D0%AB%D1%85%D0%BB%D0%B0%D1%81%D0%B0%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены; Часы противоречивы: e-museum 09–18; карточка оператора 10–00, FAQ 10–19, сообщение 01.03.2026 различается по дням. Текущая цена 300 KZT из каталога не подтверждена заново",
         "copy": {
@@ -1452,7 +1452,7 @@ export const guideContent = {
             "labelKo": "식물원: 2026년 요금 변경"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/70000001017515451",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%93%D0%BB%D0%B0%D0%B2%D0%BD%D1%8B%D0%B9%20%D0%B1%D0%BE%D1%82%D0%B0%D0%BD%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9%20%D1%81%D0%B0%D0%B4%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -1755,7 +1755,7 @@ export const guideContent = {
             "status": "Наблюдения посетителей"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940001617972",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=Dostyk%20Plaza%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -1844,7 +1844,7 @@ export const guideContent = {
             "labelKo": "카자흐스탄 정교회: 니콜라이 대성당"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000798583",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%9D%D0%B8%D0%BA%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%B8%D0%B9%20%D1%81%D0%BE%D0%B1%D0%BE%D1%80%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -2046,7 +2046,7 @@ export const guideContent = {
             "status": "Наблюдения посетителей"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000979694",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=Esentai%20Mall%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -2218,7 +2218,7 @@ export const guideContent = {
             "labelKo": "Oi-Qaragai: 규칙, 지도와 서비스"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/70000001017492915",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%93%D0%BE%D1%80%D0%BD%D1%8B%D0%B9%20%D0%BA%D1%83%D1%80%D0%BE%D1%80%D1%82%20Oi-Qaragai%20%2F%20%D0%9B%D0%B5%D1%81%D0%BD%D0%B0%D1%8F%20%D0%A1%D0%BA%D0%B0%D0%B7%D0%BA%D0%B0%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -2482,7 +2482,7 @@ export const guideContent = {
             "labelKo": "알마티 시청: 메데우 재건축과 2027년 계획"
           }
         ],
-        "mapUrl": "https://2gis.kz/almaty/firm/9429940000797844",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%A1%D0%BF%D0%BE%D1%80%D1%82%D0%B8%D0%B2%D0%BD%D1%8B%D0%B9%20%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%81%20%D0%9C%D0%B5%D0%B4%D0%B5%D1%83%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-13",
         "gaps": "Координата объекта перенесена из V4/2ГИС; точка отдельного входа не подтверждена; Языки услуг и доступность для маломобильных посетителей отдельно не подтверждены",
         "copy": {
@@ -3754,7 +3754,7 @@ export const guideContent = {
         "access": "Уличные выступления и выставленные работы зависят от дня и погоды. Постоянной программы нет.",
         "closed": false,
         "accessPending": false,
-        "mapUrl": "https://2gis.kz/almaty/geo/9430098914574642",
+        "mapUrl": "https://www.google.com/maps/search/?api=1&query=%D0%90%D1%80%D0%B1%D0%B0%D1%82%2C%20%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B%2C%20%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD",
         "checkedAt": "2026-10-14",
         "sources": [
           {
