@@ -1,3 +1,4 @@
+import { applyVisitorPolicy } from './visitor-policy.js';
 import { compactAlmatyDayPlan } from './almaty-route-view.js';
 import { applyRegionalRefinements } from './regional-refinements.js';
 import { applyOskemenPlans } from './oskemen-plans.js';
@@ -22,7 +23,7 @@ const reviewedContent=applyVisitorUpdates({...existingContent,astana:astanaConte
 
 const plannedContent={...reviewedContent,'ust-kamenogorsk':applyOskemenPlans(reviewedContent['ust-kamenogorsk']),burabay:applyBurabayPlans(reviewedContent.burabay),aktau:applyAktauPlans(reviewedContent.aktau),turkistan:applyTurkistanPlans(reviewedContent.turkistan),astana:applyAstanaPlans(reviewedContent.astana),almaty:applyAlmatyCohesion(applyLakeVisits(applyCharynDay(applyAlmatyMountainDay({...reviewedContent.almaty,routes:[...almatyFirstDayStops,...reviewedContent.almaty.routes.filter(r=>r.id!=='route-1d')]}))))};
 
-export const guideContent=applyRegionalRefinements(plannedContent);
+export const guideContent=applyVisitorPolicy(applyRegionalRefinements(plannedContent));
 
 export const contentPlaces=Object.values(guideContent).flatMap(d=>d.places);
 export const findContentPlace=id=>contentPlaces.find(p=>p.id===id);
@@ -72,13 +73,13 @@ function natureJourneys(data,ctx,placeId){
   if(!journeys.length)return '';
   const {t,tr,esc,lang}=ctx,{name}=helpers(ctx);
   const paragraph=value=>`<p lang="${lang}">${esc(tr(value))}</p>`;
-  return `<section class="section nature-journeys" id="journeys">${ctx.sectionTitle(t('숙박을 포함한 자연 여행','Отдых с ночёвкой'))}<p class="journeys-intro">${t('가고 싶은 풍경을 고른 뒤 활동과 숙박, 왕복 이동을 함께 살펴보세요. 각 구성에 실제 이용 조건을 담았습니다.','Выберите, ради каких пейзажей хочется поехать. В каждом варианте собраны занятия, ночёвка и дорога с условиями поездки.')}</p><div class="journey-list">${journeys.map(j=>`<details class="journey-card" data-journey="${esc(j.id)}"><summary><span class="eyebrow">${esc(tr(j.format))}</span><span class="journey-title" lang="${lang}">${esc(tr(j.title))}</span><span class="journey-tagline" lang="${lang}">${esc(tr(j.tagline))}</span><span class="journey-toggle">${t('여행 구성 보기','Как устроена поездка')} <span aria-hidden="true">↓</span></span></summary><div class="journey-body"><ol class="journey-steps"><li><h3>${t('여행의 이유','Ради чего ехать')}</h3>${paragraph(j.purpose)}</li><li><h3>${t('볼거리와 활동','Что посмотреть и чем заняться')}</h3>${paragraph(j.activities)}${j.placeIds.length?`<div class="journey-place-links">${j.placeIds.map(id=>{const p=findContentPlace(id);return `<a href="#/places/${esc(id)}">${esc(name(p))} →</a>`;}).join('')}</div>`:''}</li><li><h3>${t('머무를 곳','Где переночевать')}</h3><ul class="journey-stays">${j.stays.map(s=>`<li><h4>${esc(s.name)}</h4><p class="stay-room" lang="${lang}">${esc(tr(s.room))}</p>${paragraph(s.description)}</li>`).join('')}</ul></li><li><h3>${t('가는 길과 돌아오는 길','Как добраться и вернуться')}</h3><h4>${t('가는 길','Дорога туда')}</h4>${paragraph(j.transport)}<h4>${t('돌아오는 길','Возвращение')}</h4>${paragraph(j.returnTransport)}</li></ol><div class="notice journey-limits"><h4>${t('이용 조건','Условия поездки')}</h4>${paragraph(j.limits)}</div></div></details>`).join('')}</div></section>`;
+  return `<section class="section nature-journeys" id="journeys">${ctx.sectionTitle(t('숙박을 포함한 자연 여행','Отдых с ночёвкой'))}<p class="journeys-intro">${t('가고 싶은 풍경을 고른 뒤 활동과 숙박, 왕복 이동을 함께 살펴보세요. 각 구성에 실제 이용 조건을 담았습니다.','Выберите, ради каких пейзажей хочется поехать. В каждом варианте собраны занятия, ночёвка и дорога с условиями поездки.')}</p><div class="journey-list">${journeys.map(j=>`<details class="journey-card" data-journey="${esc(j.id)}"><summary><span class="eyebrow">${esc(tr(j.format))}</span><span class="journey-title" lang="${lang}">${esc(tr(j.title))}</span><span class="journey-tagline" lang="${lang}">${esc(tr(j.tagline))}</span><span class="journey-toggle">${t('여행 구성 보기','Как устроена поездка')} <span aria-hidden="true">↓</span></span></summary><div class="journey-body"><ol class="journey-steps"><li><h3>${t('여행의 이유','Ради чего ехать')}</h3>${paragraph(j.purpose)}</li><li><h3>${t('볼거리와 활동','Что посмотреть и чем заняться')}</h3>${paragraph(j.activities)}${j.placeIds.length?`<div class="journey-place-links">${j.placeIds.map(id=>{const p=findContentPlace(id);return `<a href="#/places/${esc(id)}">${esc(name(p))} →</a>`;}).join('')}</div>`:''}</li><li><h3>${t('머무를 곳','Где переночевать')}</h3><ul class="journey-stays">${j.stays.map(s=>`<li><h4>${esc(tr(s.name))}</h4><p class="stay-room" lang="${lang}">${esc(tr(s.room))}</p>${paragraph(s.description)}</li>`).join('')}</ul></li><li><h3>${t('가는 길과 돌아오는 길','Как добраться и вернуться')}</h3><h4>${t('가는 길','Дорога туда')}</h4>${paragraph(j.transport)}<h4>${t('돌아오는 길','Возвращение')}</h4>${paragraph(j.returnTransport)}</li></ol><div class="notice journey-limits"><h4>${t('이용 조건','Условия поездки')}</h4>${paragraph(j.limits)}</div></div></details>`).join('')}</div></section>`;
 }
 
 function stayOptionMarkup(stay,ctx){
   if(!stay)return '';
   const {esc,tr}=ctx;
-  return `<details class="guide-answer stay-option" data-stay-option><summary>${esc(tr(stay.title))}</summary><div class="answer-body"><h3>${esc(stay.name)}</h3><p class="stay-room">${esc(tr(stay.room))}</p><p>${esc(tr(stay.body))}</p><p class="small muted">${esc(tr(stay.limits))}</p></div></details>`;
+  return `<details class="guide-answer stay-option" data-stay-option><summary>${esc(tr(stay.title))}</summary><div class="answer-body"><h3>${esc(tr(stay.name))}</h3><p class="stay-room">${esc(tr(stay.room))}</p><p>${esc(tr(stay.body))}</p><p class="small muted">${esc(tr(stay.limits))}</p></div></details>`;
 }
 
 function dayPlanMarkup(plan,ctx,compactRoute=null){
