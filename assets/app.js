@@ -1,3 +1,4 @@
+import { retiredPlaceDestinations } from './visitor-policy.js';
 import { preparationPage } from './preparation-guide.js';
 import { transportPreparationPage } from './transport-guide.js';
 import { routeMapMarkup, mountRouteMap } from './route-map.js';
@@ -134,7 +135,12 @@ function updateDirectory() {
 }
 function render({focus=false}={}) {
   currentRoute=route();
-  const parts=currentRoute.split('/');
+  let parts=currentRoute.split('/');
+  if(parts[0]==='places'&&Object.hasOwn(retiredPlaceDestinations,parts[1])){
+    currentRoute='destinations/'+retiredPlaceDestinations[parts[1]];
+    history.replaceState(null,'','#/'+currentRoute);
+    parts=currentRoute.split('/');
+  }
   let body;
   let title=t('카자흐스탄 여행','Путеводитель по Казахстану');
   if(currentRoute==='home')body=home();
