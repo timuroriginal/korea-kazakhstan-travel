@@ -251,3 +251,9 @@ Presentation lives in `assets/almaty-route-view.js`; original content data and t
 ## Образец «Алматы. Своя поездка», 21 октября 2026
 
 Раздел guides/almaty/ встроен в страницы Алматы и его маршрутов. RU/KO, пять полных дней плюс прилёт и вылет, варианты города/Чарына и озёр, календарь, шесть ночёвок, пользовательский расчёт расходов, автономный HTML и печать. Язык передаётся из сайта, есть обратный переход к местам. Это редакционный образец без оплаты и бронирований; неподтверждённая логистика обозначена. Исходники и сборка: guides/almaty/README.md. Проверки: tests/product.mjs. Основная ветка и коммерческий запуск не входят в этот этап.
+
+## Editorial selection, 22 October 2026
+
+`assets/visitor-policy.js` applies the owner-approved visitor selection after regional content refinements. Food profiles are limited to the explicitly retained Daididau. Ordinary meal stops and lodging examples use neutral area/comfort guidance, while attraction and mall names remain. Original research modules stay intact. Retired restaurant URLs resolve to their destination; saved references are filtered. Both languages and the standalone Almaty build consume this content.
+
+Run `node tests/editorial-policy.mjs` with the same Playwright runtime as the browser suite. It covers catalogue selection, itinerary references, old links, saved items and neutral copy. Historical named-meal and named-room assertions have been replaced by these policy requirements.
