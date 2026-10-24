@@ -97,7 +97,7 @@ function gallery() {
 }
 function productCTA(id) {
   if(id!=='almaty')return '';
-  return `<aside class="notice" data-almaty-product><span class="eyebrow">${t('나의 여행','Своя поездка')}</span><h3>${t('알마티에서 보내는 다섯 날','Пять дней в Алматы')}</h3><p>${t('도착 후 쉴 시간, 도심 산책과 자연 방문을 하나의 일정으로 살펴보세요. 날짜에 맞춘 숙박 구성과 오프라인 안내도 준비할 수 있습니다.','Отдых после прилёта, городские прогулки и природные дни в одном плане. Выберите даты, посмотрите ночёвки и сохраните памятку без интернета.')}</p><p class="small muted">${t('검토용 예시입니다. 숙박과 왕복 교통편은 포함되지 않으며 결제 기능은 아직 없습니다.','Образец для проверки. Жильё и перевозки не включены, оплата пока не подключена.')}</p><a class="button primary" data-open-product href="guides/almaty/?lang=${lang}">${t('여행 계획 열기','Открыть план поездки')} →</a></aside>`;
+  return `<aside class="notice" data-almaty-product><span class="eyebrow">${t('나의 여행','Своя поездка')}</span><h3>${t('알마티에서 보내는 다섯 날','Пять дней в Алматы')}</h3><p>${t('도착 후 쉴 시간, 도심 산책과 자연 방문을 하나의 일정으로 살펴보세요. 날짜에 맞춘 숙박 구성과 오프라인 안내도 준비할 수 있습니다.','Отдых после прилёта, городские прогулки и природные дни в одном плане. Выберите даты, посмотрите ночёвки и сохраните памятку без интернета.')}</p><p class="small muted">${t('검토용 예시입니다. 숙박과 왕복 교통편은 포함되지 않으며 결제 기능은 아직 없습니다.','Образец для проверки. Жильё и перевозки не включены, оплата пока не подключена.')}</p><a class="button primary" data-open-product href="guides/almaty/offer/?lang=${lang}">${t('구성과 무료 예시 보기','Состав и бесплатный пример')} →</a></aside>`;
 }
 function contentContext() { return {lang,t,tr,esc,picture,breadcrumb,sectionTitle,saveButton,localNav,gallery,transportPanels,promoCard,productCTA}; }
 function transportPanels() {
