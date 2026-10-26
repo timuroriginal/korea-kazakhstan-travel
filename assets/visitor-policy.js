@@ -1,3 +1,4 @@
+
 // Published visitor selection. Original research remains in the import modules.
 const text=(ru,ko)=>({ru,ko});
 export const retiredPlaceDestinations=Object.freeze({
@@ -28,7 +29,7 @@ export function applyVisitorPolicy(source){
   for(const p of d.practical)if(p.id==='practical-taxi'||p.id.startsWith('visitor-taxi-'))p.copy.answer=taxi;
  }
  const a=content.almaty;
- const first=route(a,'route-1d');first.copy.returnTransport=ownReturn;first.dayPlan.returnTransport=ownReturn;
+ const first=route(a,'route-1d');
  first.dayPlan.food=food('Обед у Арбата','아르바트 주변에서 식사','После прогулки по Арбату можно выбрать кафе или ресторан на соседних улицах. Оставьте время на обед, не привязывая день к одному заведению.','아르바트 산책 뒤 주변 거리에서 마음에 드는 카페나 식당을 고를 수 있습니다. 특정 식당에 일정을 맞추기보다 식사할 여유를 남겨 두세요.');
  route(a,'route-3d').dayPlan.food=food('Еда и пауза на курорте','리조트에서 식사와 휴식','У курорта можно сделать паузу в кафе или ресторане. На еду оставьте время до обратного спуска. Обед не входит автоматически в билет канатной дороги.','리조트의 카페나 식당에서 쉬며 식사할 수 있습니다. 하산 전에 식사할 시간을 남겨 두세요. 케이블카 입장권에 식사가 자동으로 포함되지는 않습니다.');
  const lakes=route(a,'route-3d-kolsai').dayPlan;lakes.stay=stays.saty;lakes.food=food('Еда между прогулками','산책 전후의 식사','На озёра возьмите воду и привычный перекус. В Саты оставьте время на еду до выезда или после возвращения. Питание смотрите в условиях выбранного жилья, не рассчитывая на обязательное кафе у воды.','호수 방문에는 물과 익숙한 간식을 준비하세요. 사티에서 출발 전이나 귀환 후 식사할 시간을 둡니다. 식사는 선택한 숙소 조건을 살펴보고 물가 카페가 반드시 운영된다고 가정하지 마세요.');
