@@ -1,3 +1,4 @@
+
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -816,9 +817,9 @@ try {
       await go('prepare/connection');await page.locator('details').evaluateAll(ns=>ns.forEach(n=>n.open=true));assert.match(await page.locator('#content').innerText(),lang==='ru'?/не включает обычные звонки и SMS/:/일반 통화와 문자를 제공하지 않습니다/);
     }
   });
-  await check('Road closure and cable maintenance stay distinct and ethno hours agree on profile and plan',async()=>{
+  await check('Expired road alerts are absent and current cable maintenance stays separate from ethno hours',async()=>{
     for(const lang of ['ru','ko']){
-      await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('.itinerary-card').evaluateAll(ns=>ns.forEach(n=>n.open=true));const notice=await page.locator('.mountain-season-notice').first().innerText();assert.match(notice,/22/);assert.match(notice,/2026/);assert.match(notice,lang==='ru'?/1 ноября/:/11월 1일/);assert.match(notice,lang==='ru'?/машин и пешеходов/:/차량과 보행자/);
+      await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('.itinerary-card').evaluateAll(ns=>ns.forEach(n=>n.open=true));const notices=page.locator('.mountain-season-notice');const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Almaty'}).format(new Date());if(today<='2026-11-01'){const notice=await notices.first().innerText();assert.match(notice,/2026/);assert.match(notice,lang==='ru'?/1 ноября/:/11월 1일/);assert.doesNotMatch(notice,lang==='ru'?/22 октября/:/10월 22일/);}else assert.equal(await notices.count(),0);
       await go('places/oskemen-ethnopark');const hours=await page.locator('.visit-facts').innerText();assert.match(hours,/17:00/);assert.match(hours,/21:00/);assert.match(hours,/20:00/);assert.equal(await page.locator('.address-box button').count(),0);
       await go('routes/ust-kamenogorsk?plan=oskemen-route-ethno');const plan=page.locator('[data-route-id="oskemen-route-ethno"]');await plan.locator('details').evaluateAll(ns=>ns.forEach(n=>n.open=true));assert.match(await plan.innerText(),/17:00/);
     }
