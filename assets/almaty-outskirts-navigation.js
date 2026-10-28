@@ -1,10 +1,11 @@
+
 // Visitor navigation. Research and limits: outputs/almaty-navigation-completion/outskirts.md.
 const text = (ru, ko) => ({ ru, ko });
 const googlePlace = query => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 
 const maps = {
-  charyn: googlePlace('Charyn Canyon Visitor Center, Valley of Castles, Kazakhstan'),
-  kolsai: googlePlace('Lower Kolsai Lake, Kurmeti, Kazakhstan'),
+  charyn: 'https://www.google.com/maps/search/?api=1&query=43.3565336,79.0548123&query_place_id=ChIJyXGoksi3gDgR0E4YPWHuR84',
+  kolsai: 'https://www.google.com/maps/search/?api=1&query=42.9882299,78.3254368&query_place_id=ChIJt2mjFADHhjgRIssfgm6E06Q',
   kaindy: googlePlace('Kaindy Lake, Kazakhstan'),
   saty: googlePlace('Saty, Almaty Region, Kazakhstan'),
 };
