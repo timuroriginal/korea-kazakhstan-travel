@@ -1,4 +1,6 @@
 
+import {outskirtsNavigation} from '../../assets/almaty-outskirts-navigation.js';
+import {koktobeStartMapUrl} from '../../assets/almaty-mountain-navigation.js';
 import {medeuStartMapUrl} from '../../assets/almaty-mountain-day.js';
 const x=(ru,ko)=>({ru,ko});
 export const journey={
@@ -60,3 +62,7 @@ journey.ticketReference={shymbulak:12000,koktobe:10000,museum:5000};
 
 // First release: self-directed city plan first, independently arranged excursions optional.
 journey.modes={local:journey.modes.local,city:journey.modes.city,lakes:journey.modes.lakes};
+
+// Pin the lower cable-car station, not the park on the hill.
+for(const day of [journey.city[1],journey.local[1]])day.mapUrl=koktobeStartMapUrl;
+for(const [day,key] of [[journey.city[0],'charyn'],[journey.lakes[0],'kolsai'],[journey.lakes[1],'kaindy']])day.mapUrl=outskirtsNavigation[key].steps.find(s=>s.mapUrl).mapUrl;
