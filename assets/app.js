@@ -27,6 +27,7 @@ const safeSrc = value => /^(assets\/|https:\/\/)/.test(value || '') ? esc(value)
 const destinationURL = id => `#/destinations/${id}`;
 const placeURL = id => `#/places/${id}`;
 const route = () => location.hash.replace(/^#\/?/, '').split('?')[0].replace(/\/+$/, '') || 'home';
+const sectionURL = id => `#/${currentRoute==='home'?'':currentRoute}?section=${encodeURIComponent(id)}`;
 
 function persist() {
   try { localStorage.setItem(storageKey, JSON.stringify({ lang, saved: [...saved] })); return true; } catch { return false; }
@@ -83,7 +84,7 @@ function directory(kind) {
 }
 function overviewFacts() { return `<div class="fact-grid"><div><strong>${t('언제 갈까요?','Когда ехать')}</strong><span>${t('계절별 안내 준비 중','Подготовим сведения по сезонам')}</span></div><div><strong>${t('얼마나 머물까요?','Сколько времени')}</strong><span>${t('일정 확인 후 안내','После проверки маршрутов')}</span></div><div><strong>${t('어떤 여행인가요?','Тип поездки')}</strong><span>${t('관심사와 이동 방식','Интересы и способы перемещения')}</span></div></div>`; }
 function destinationSidebar(d) { return `<aside class="sidebar"><div class="sidebar-panel"><h3>${t('여행 실용 정보','Практическая информация')}</h3><span class="label">${t('검색용 현지 이름','Местное название для поиска')}</span><strong>${esc(d.local)}</strong><button class="button" data-copy="${esc(d.local)}">${t('이름 복사','Копировать название')}</button><div class="map-placeholder"><span aria-hidden="true">⌖</span><strong>${t('지도 준비 중','Место для карты')}</strong><small>${t('정확한 위치 확인 후 추가','Добавим после проверки точек')}</small></div><ul><li>${t('교통과 도착','Прибытие и транспорт')}</li><li>${t('현지 주소와 표현','Местные адреса и фразы')}</li><li>${t('공식 출처와 확인 날짜','Источники и дата проверки')}</li></ul></div><div class="sidebar-panel"><h3>${t('여행 준비','Подготовка к поездке')}</h3><p>${t('입국, 결제, 인터넷 등 기본 정보를 확인하세요.','Въезд, оплата, интернет и другие основные вопросы.')}</p><a class="button" href="#/prepare">${t('준비 항목 보기','Открыть раздел')}</a></div></aside>`; }
-function localNav(items) { return `<nav class="local-nav" aria-label="${t('페이지 목차','Разделы страницы')}"><div class="wrap">${items.map(([id,label])=>`<a href="#${id}" data-scroll="${id}">${esc(label)}</a>`).join('')}</div></nav>`; }
+function localNav(items) { return `<nav class="local-nav" aria-label="${t('페이지 목차','Разделы страницы')}"><div class="wrap">${items.map(([id,label])=>`<a href="${esc(sectionURL(id))}" data-scroll="${id}">${esc(label)}</a>`).join('')}</div></nav>`; }
 function destinationPage(d) {
   if(hasContent(d.id))return contentDestinationPage(d,contentContext());
   const items=[['overview',t('소개','Обзор')],['places',t('명소','Что посмотреть')],['nearby',t('근교','Окрестности')],['transport',t('교통','Транспорт')],['stay',t('숙박과 음식','Проживание и еда')],['itinerary',t('일정','Маршруты')],['videos',t('영상','Видео')]];
@@ -99,7 +100,7 @@ function productCTA(id) {
   if(id!=='almaty')return '';
   return `<aside class="notice" data-almaty-product><span class="eyebrow">${t('나의 여행','Своя поездка')}</span><h3>${t('알마티에서 보내는 다섯 날','Пять дней в Алматы')}</h3><p>${t('도착 후 쉴 시간, 도심 산책과 자연 방문을 하나의 일정으로 살펴보세요. 날짜에 맞춘 숙박 구성과 오프라인 안내도 준비할 수 있습니다.','Отдых после прилёта, городские прогулки и природные дни в одном плане. Выберите даты, посмотрите ночёвки и сохраните памятку без интернета.')}</p><p class="small muted">${t('검토용 예시입니다. 숙박과 왕복 교통편은 포함되지 않으며 결제 기능은 아직 없습니다.','Образец для проверки. Жильё и перевозки не включены, оплата пока не подключена.')}</p><a class="button primary" data-open-product href="guides/almaty/offer/?lang=${lang}">${t('구성과 무료 예시 보기','Состав и бесплатный пример')} →</a></aside>`;
 }
-function contentContext() { return {lang,t,tr,esc,picture,breadcrumb,sectionTitle,saveButton,localNav,gallery,transportPanels,promoCard,productCTA}; }
+function contentContext() { return {lang,t,tr,esc,picture,breadcrumb,sectionTitle,saveButton,localNav,sectionURL,gallery,transportPanels,promoCard,productCTA}; }
 function transportPanels() {
   const p=findContentPlace('kok-tobe');
   return `<div class="tablist" role="tablist" aria-label="${t('이동 방법','Способ добраться')}"><button class="tab" role="tab" id="tab-cable" aria-controls="panel-cable" aria-selected="${transportTab==='cable'}" tabindex="${transportTab==='cable'?'0':'-1'}" data-tab="cable">${t('케이블카','Канатная дорога')}</button><button class="tab" role="tab" id="tab-ground" aria-controls="panel-ground" aria-selected="${transportTab==='ground'}" tabindex="${transportTab==='ground'?'0':'-1'}" data-tab="ground">${t('지상 교통','Наземный путь')}</button></div><div role="tabpanel" id="panel-cable" aria-labelledby="tab-cable"${transportTab==='cable'?'':' hidden'}><ol class="steps"><li><strong>${t('하부 정류장','Нижняя станция')}</strong><span>${t('하부 케이블카 역은 도스틱 대로 104B에 있습니다. 정상 공원의 주소와 다릅니다.','Нижняя станция находится на проспекте Достык, 104Б. Это отдельный адрес, не вход в парк на вершине.')}</span></li><li><strong>${t('운행 시간','Режим подъёма')}</strong><span lang="${lang}">${esc(tr(p.visitor.hours))}</span></li><li><strong>${t('귀환 계획','Обратный путь')}</strong><span>${t('편도권과 왕복권은 별도로 안내되어 있습니다. 대기와 하산에 여유를 두며 놀이시설은 별도 요금입니다.','Есть отдельные билеты в одну сторону и туда-обратно. Для очереди и спуска нужен запас времени. Аттракционы оплачиваются отдельно.')}</span></li></ol></div><div role="tabpanel" id="panel-ground" aria-labelledby="tab-ground"${transportTab==='ground'?'':' hidden'}><p>${t('육상 이동의 경우 운영사는 오마로바 거리 41번지를 안내합니다. 도스틱에서 출발하는 별도 상품도 있지만 해당 코스의 단계별 이동과 외국인 이용 조건은 아직 확인되지 않았습니다.','Для наземного подъёма оператор указывает улицу Омаровой, 41. Также опубликован отдельный вариант от Достык. Пошаговая схема этого варианта и условия для иностранного гостя пока не подтверждены.')}</p><p>${t('지상 교통은 케이블카와 별도 상품입니다.','У наземного подъёма и канатной дороги разные билеты и расписания.')}</p><a class="small" href="https://koktobe.com/price-list" target="_blank" rel="noopener noreferrer">${t('공식 요금','Тарифы оператора')} ↗</a></div>`;
@@ -164,11 +165,19 @@ function render({focus=false}={}) {
   mapCleanup=()=>{cleanMap();cleanContent();};
   if(focus){document.getElementById('content').focus({preventScroll:true});window.scrollTo(0,0);}
   // A direct plan link opens the matching card without changing the hash router.
-  const requestedPlan=new URLSearchParams(location.hash.split('?')[1]||'').get('plan');
+  const parameters=new URLSearchParams(location.hash.split('?')[1]||'');
+  const requestedPlan=parameters.get('plan');
   const planCard=currentRoute.startsWith('routes/')&&requestedPlan
     ? [...app.querySelectorAll('[data-route-id],[data-journey]')].find(card=>(card.dataset.routeId||card.dataset.journey)===requestedPlan)
     : null;
   if(planCard){planCard.open=true;if(focus)planCard.querySelector('summary')?.focus({preventScroll:true});planCard.scrollIntoView({block:'start',behavior:'auto'});}
+  const section=parameters.get('section');
+  if(section)scrollToSection(section,{focus,behavior:'auto'});
+}
+function scrollToSection(id,{focus=true,behavior='auto'}={}){
+  const target=document.getElementById(id);if(!target||!app.contains(target))return;
+  if(focus){if(!target.hasAttribute('tabindex'))target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}
+  target.scrollIntoView({block:'start',behavior});
 }
 function openVideo(key,title) {
   const item=media[key];
@@ -188,8 +197,8 @@ app.addEventListener('click',async event=>{
     document.getElementById('mobile-nav').hidden=true;
     document.getElementById('menu-button').setAttribute('aria-expanded','false');
   }
-  if(control.dataset.scroll){event.preventDefault();document.getElementById(control.dataset.scroll)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
-  if(control.dataset.language){const y=window.scrollY;lang=control.dataset.language;persist();render();window.scrollTo(0,y);}
+  if(control.dataset.scroll&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey&&event.button===0){event.preventDefault();history.pushState(null,'',sectionURL(control.dataset.scroll));scrollToSection(control.dataset.scroll,{behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+  if(control.dataset.language){const y=window.scrollY;lang=control.dataset.language;persist();render();document.querySelector('[data-language]')?.focus({preventScroll:true});window.scrollTo(0,y);}
   if(control.id==='menu-button'){const expanded=control.getAttribute('aria-expanded')==='true';control.setAttribute('aria-expanded',String(!expanded));document.getElementById('mobile-nav').hidden=expanded;}
   if(control.dataset.filter){filter=control.dataset.filter;updateDirectory();}
   if(control.dataset.save){const id=control.dataset.save;saved.has(id)?saved.delete(id):saved.add(id);const persisted=persist();control.setAttribute('aria-pressed',String(saved.has(id)));control.textContent=`${saved.has(id)?'♥':'♡'} ${saved.has(id)?t('저장됨','Сохранено'):t('저장하기','Сохранить')}`;notify(persisted?t('이 브라우저의 목록을 업데이트했습니다.','Список в этом браузере обновлён.'):t('브라우저 저장을 사용할 수 없어 현재 세션에만 저장됩니다.','Хранилище браузера недоступно. Список сохранится только в текущем сеансе.'));}

@@ -1,4 +1,3 @@
-
 // Almaty research with separate RU/KO editorial overlays. Unknown facts stay null.
 export const guideContent = {
   "almaty": {
@@ -4239,7 +4238,7 @@ export const guideContent = {
         "ko": "첫 방문, 개별 여행, 예술과 현지 음식에 관심 있는 여행자에게 어울립니다. 자연을 보고 싶다면 별도의 근교 일정을 더할 수 있습니다."
       }
     },
-    "editorialDate": "2026-10-13",
+    "editorialDate": "2026-10-17",
     "languageReview": "Owner review; Korean adaptation has not been reviewed by a native editor"
   }
 };

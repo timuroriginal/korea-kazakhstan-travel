@@ -157,10 +157,10 @@ export function mountRouteMap(lang,destinations,picture){
     if(target&&!choosingOrigin&&event.pointerType!=='touch'&&selected!==target.dataset.mapTarget)choose(target.dataset.mapTarget);
   });
   root.addEventListener('click',event=>{
-    const mode=event.target.closest('[data-flight-mode]');if(mode){if(mode.dataset.flightMode==='korea'){if(!koreaAirports[origin]){domesticOrigin=origin;origin='incheon';}}else origin=domesticOrigin;setOriginMode(false);if(mode.dataset.flightMode==='korea'&&!koreanFlight(origin,selected))choose('almaty',true);else drawFlight();return;}
+    const mode=event.target.closest('[data-flight-mode]');if(mode){if((mode.dataset.flightMode==='korea')===Boolean(koreaAirports[origin]))return;if(mode.dataset.flightMode==='korea'){if(!koreaAirports[origin]){domesticOrigin=origin;origin='incheon';}}else if(koreaAirports[origin])origin=domesticOrigin;setOriginMode(false);if(mode.dataset.flightMode==='korea'&&!koreanFlight(origin,selected))choose('almaty',true);else drawFlight();return;}
     const krOrigin=event.target.closest('[data-korea-origin]');if(krOrigin){if(!koreaAirports[origin])domesticOrigin=origin;origin=krOrigin.dataset.koreaOrigin;setOriginMode(false);if(!koreanFlight(origin,selected)&&selected!=='almaty')choose('almaty',true);else drawFlight();return;}
     if(event.target.closest('#flight-pick')){setOriginMode(!choosingOrigin);return;}
-    if(event.target.closest('#flight-swap')){if(koreaAirports[origin])return;const previous=origin;origin=selected;setOriginMode(false);choose(previous,true);return;}
+    if(event.target.closest('#flight-swap')){if(koreaAirports[origin])return;const previous=origin;origin=selected;domesticOrigin=origin;setOriginMode(false);choose(previous,true);return;}
     const target=event.target.closest('[data-map-target],[data-map-choice],[data-map-cycle]');if(!target)return;
     if(choosingOrigin&&koreaAirports[origin]&&!target.dataset.mapCycle){setOriginMode(false);choose(target.dataset.mapChoice||target.dataset.mapTarget,true);return;}
     if(choosingOrigin&&!target.dataset.mapCycle){origin=target.dataset.mapChoice||target.dataset.mapTarget;domesticOrigin=origin;setOriginMode(false);drawFlight();root.querySelector('#map-announcement').textContent=t('출발: ','Откуда: ')+name(origin);return;}
