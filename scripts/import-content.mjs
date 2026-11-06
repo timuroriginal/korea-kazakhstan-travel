@@ -1,7 +1,8 @@
 // Compile reviewed workbook records into buildless, reusable destination data.
-// Usage: node scripts/import-content.mjs path/to/normalized.json
+// Usage: node scripts/import-content.mjs [path/to/normalized.json]
+// The tracked research snapshot is the default; reviewed visitor overlays take precedence.
 import fs from 'node:fs/promises';
-const rows=JSON.parse(await fs.readFile(process.argv[2],'utf8'));
+const rows=JSON.parse(await fs.readFile(process.argv[2]||new URL('../data/research/almaty-workbook.json',import.meta.url),'utf8'));
 const external=new Set(['almaty-shymbulak','almaty-medeu-sports-complex','ile-alatau-park','almaty-bao','almaty-charyn','almaty-gorelnik','almaty-oi-qaragai','almaty-kolsai','almaty-kaindy']);
 const category=r=>/музей|театр|религиоз|городской/.test(r['категория'])?'culture':/торговый|рынок/.test(r['категория'])?'shopping':/парк|семейная/.test(r['категория'])?'parks':'mountains';
 const places=rows['Места'].filter(r=>r['place_id']!=='almaty-medeu-visit-center').map(r=>({
@@ -54,6 +55,13 @@ for(const p of [...nature.places,...city.places]){
 }
 for(const p of places){
   for(const field of ['format','effort','language'])if(!bilingual(p.visit?.[field]))throw Error(`Missing visitor guidance: ${p.id}.${field}`);
+}
+for(const [id,fields] of Object.entries(visitor.placeOverrides||{})){
+  const place=places.find(p=>p.id===id);
+  if(!place)throw Error(`Reviewed visitor override references unknown place: ${id}`);
+  if(Object.keys(fields).some(key=>!['address','mapUrl'].includes(key)))throw Error(`Unsupported visitor override: ${id}`);
+  if(fields.mapUrl&&!fields.mapUrl.startsWith('https://www.google.com/maps/'))throw Error(`Invalid reviewed map: ${id}`);
+  Object.assign(place,fields);
 }
 content.almaty.copy=copy.destination;
 content.almaty.editorialDate=copy.editorialDate;

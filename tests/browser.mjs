@@ -1,4 +1,3 @@
-
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -146,7 +145,7 @@ try {
     await city.locator('[data-place-search]').fill('');await city.locator('[data-place-filter="all"]').click();assert.equal(await city.locator('.place-card').count(),6);
     const nearby=page.locator('[data-place-group="nearby"]');await nearby.locator('[data-place-search]').fill('Чарын');assert.equal(await nearby.locator('.place-card').count(),1);
     assert.equal(await page.locator('[data-place-id="almaty-medeu-visit-center"]').count(),0);
-    await page.locator('[data-scroll="nearby"]').first().click();assert.match(page.url(),/#\/destinations\/almaty$/);
+    await page.locator('[data-scroll="nearby"]').first().click();assert.match(page.url(),/#\/destinations\/almaty\?section=nearby$/);
   });
   await check('All 102 place pages preserve internal research without public source furniture',async()=>{
     const {contentPlaces}=await import('../assets/content-pages.js');assert.equal(contentPlaces.length,102);assert.equal(contentPlaces.filter(p=>p.destination==='almaty').length,42);
@@ -440,7 +439,7 @@ try {
       assert.equal(await card.locator('a[href="#/places/almaty-medeu-sports-complex"]').count(),0);
       await card.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
       const body=await card.innerText();assert.match(body,/3200|3,200/);assert.match(body,/12 000|12,000/);assert.match(body,/4 000|4,000/);assert.match(body,/15:00/);
-      assert.match(body,/2026/);assert.match(body,lang==='ru'?/[Сс] 19 октября по 1 ноября/:/10월 19일부터 11월 1일까지/);
+      // Dated maintenance notices are checked separately below, including their expiry.
       assert.match(body,lang==='ru'?/не вершина|не.*вершина/:/산 정상/);assert.match(body,lang==='ru'?/ККД-4/:/KKD-4/);
       assert.match(body,lang==='ru'?/перевод.*камер/:/카메라 번역/);assert.match(body,lang==='ru'?/Ночёвка/:/숙박/);
       assert.doesNotMatch(body,/[\u2013\u2014]|по отзывам|2ГИС|출처/);
@@ -533,7 +532,7 @@ try {
       assert.deepEqual(await hub.locator('[data-planning-choice] a').evaluateAll(nodes=>nodes.map(a=>a.getAttribute('href'))),['route-1d','route-3d','route-3d-charyn','route-3d-kolsai','almaty-tanbaly-visit','almaty-altyn-emel-visit'].map(id=>'#/routes/almaty?plan='+id));
       await hub.locator('[data-duration-options] summary').click();const body=await hub.innerText();assert.match(body,lang==='ru'?/Пять или шесть дней/:/5~6일/);assert.match(body,lang==='ru'?/без учёта ваших рейсов/:/항공편 시간은 반영하지/);assert.match(body,lang==='ru'?/Готовый перевозчик пока не подобран/:/운송편은 아직 선정되지/);assert.doesNotMatch(body,/[\u2013\u2014]|2ГИС|по отзывам|출처/);
       await page.locator('[data-practical-id="practical-stay-center"] summary').click();assert.match(await page.locator('[data-practical-id="practical-stay-center"]').innerText(),lang==='ru'?/менять отель не обязательно/:/숙소를 옮길 필요는 없습니다/);
-      await hub.locator('[data-scroll="transport"]').click();assert.match(page.url(),/#\/destinations\/almaty$/);assert.ok(await page.locator('#transport').isVisible());
+      await hub.locator('[data-scroll="transport"]').click();assert.match(page.url(),/#\/destinations\/almaty\?section=transport$/);assert.ok(await page.locator('#transport').isVisible());
     }
   });
   await check('Direct Almaty plans open on navigation, reload and language switch and link from eight places',async()=>{
@@ -819,7 +818,7 @@ try {
   });
   await check('Expired road alerts are absent and current cable maintenance stays separate from ethno hours',async()=>{
     for(const lang of ['ru','ko']){
-      await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('.itinerary-card').evaluateAll(ns=>ns.forEach(n=>n.open=true));const notices=page.locator('.mountain-season-notice');const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Almaty'}).format(new Date());if(today<='2026-11-01'){const notice=await notices.first().innerText();assert.match(notice,/2026/);assert.match(notice,lang==='ru'?/1 ноября/:/11월 1일/);assert.doesNotMatch(notice,lang==='ru'?/22 октября/:/10월 22일/);}else assert.equal(await notices.count(),0);
+      await go('routes/almaty');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();await page.locator('.itinerary-card').evaluateAll(ns=>ns.forEach(n=>n.open=true));const notices=page.locator('[data-route-id="route-3d"] .mountain-season-notice');const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Almaty'}).format(new Date());if(today<='2026-11-01'){const notice=await notices.first().innerText();assert.match(notice,/2026/);assert.match(notice,lang==='ru'?/1 ноября/:/11월 1일/);assert.doesNotMatch(notice,lang==='ru'?/22 октября/:/10월 22일/);}else assert.equal(await notices.count(),0);
       await go('places/oskemen-ethnopark');const hours=await page.locator('.visit-facts').innerText();assert.match(hours,/17:00/);assert.match(hours,/21:00/);assert.match(hours,/20:00/);assert.equal(await page.locator('.address-box button').count(),0);
       await go('routes/ust-kamenogorsk?plan=oskemen-route-ethno');const plan=page.locator('[data-route-id="oskemen-route-ethno"]');await plan.locator('details').evaluateAll(ns=>ns.forEach(n=>n.open=true));assert.match(await plan.innerText(),/17:00/);
     }
@@ -843,7 +842,6 @@ try {
     for(const lang of ['ru','ko']){
       await go('routes/almaty?plan=route-1d');if(await page.locator('html').getAttribute('lang')!==lang)await page.locator(`[data-language="${lang}"]`).click();const card=page.locator('[data-route-id="route-1d"]');const first=card.locator('[data-stop-detail]').first();assert.equal(await first.locator('.answer-body').isVisible(),false);await first.locator('summary').focus();await page.keyboard.press('Enter');assert.equal(await first.locator('.answer-body').isVisible(),true);assert.match(await card.locator('.route-essential').innerText(),lang==='ru'?/понедельникам/:/월요일/);
       await go('routes/almaty?plan=route-3d-kolsai');const lakes=page.locator('[data-route-id="route-3d-kolsai"]');assert.match(await lakes.locator('.route-essential').innerText(),lang==='ru'?/два самостоятельных/:/각각 선택/);assert.match(await lakes.locator('.route-return').innerText(),/Саты|사티/);assert.equal(await lakes.locator('[data-stay-option][open]').count(),0);
-      await go('routes/almaty?plan=route-3d');assert.equal(await page.locator('[data-route-id="route-3d"] .mountain-season-notice').isVisible(),true);
     }
   });
   await check('Compact Almaty fits narrow screens in default and fully expanded states',async()=>{

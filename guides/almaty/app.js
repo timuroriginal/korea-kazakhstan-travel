@@ -2,9 +2,13 @@
 'use strict';
 const data=JSON.parse(document.getElementById('product-data').textContent),root=document.getElementById('product');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let saved={};try{saved=JSON.parse(localStorage.getItem('kg-product-pilot-v1')||'{}')}catch{}
-let embedded={};try{embedded=JSON.parse(document.documentElement.dataset.settings||'{}')}catch{}
-let state={lang:'ru',stage:'trip',day:1,arrival:'afternoon',energy:'dinner',monday:false,checks:[],tripMode:'local',mountainOrder:'second',culture:'museum',firstDate:'',expenses:{},people:2,...saved,...embedded};
+const exportId=document.documentElement.dataset.exportId||(location.protocol==='file:'&&document.documentElement.dataset.settings?'legacy:'+location.pathname:null);
+const storageKey=exportId?'kg-product-pilot-v1:export:'+exportId:'kg-product-pilot-v1';
+const storedObject=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:null;
+let saved=null;try{saved=storedObject(JSON.parse(localStorage.getItem(storageKey)||'null'))}catch{}
+let embedded={};try{embedded=storedObject(JSON.parse(document.documentElement.dataset.settings||'{}'))||{}}catch{}
+// Each download starts from its own snapshot; subsequent opens prefer its saved choices.
+let state={lang:'ru',stage:'trip',day:1,arrival:'afternoon',energy:'dinner',monday:false,checks:[],tripMode:'local',mountainOrder:'second',culture:'museum',firstDate:'',expenses:{},people:2,...(saved||embedded)};
 if(!Number.isInteger(state.day)||state.day<1||state.day>5)state.day=1;
 const requestedLanguage=location.protocol==='file:'?null:new URLSearchParams(location.search).get('lang');
 if(['ru','ko'].includes(requestedLanguage))state.lang=requestedLanguage;
@@ -13,7 +17,7 @@ if(!['ru','ko'].includes(state.lang))state.lang='ru';if(!data.stages.some(s=>s.i
 if(!Object.hasOwn(data.journey.modes,state.tripMode))state.tripMode='local';if(!['second','third'].includes(state.mountainOrder))state.mountainOrder='second';if(!['museum','shopping'].includes(state.culture))state.culture='museum';if(!state.expenses||typeof state.expenses!=='object'||Array.isArray(state.expenses))state.expenses={};if(!Number.isInteger(state.people)||state.people<1||state.people>12)state.people=2;if(!/^\d{4}-\d{2}-\d{2}$/.test(state.firstDate)||!Number.isFinite(Date.parse(state.firstDate+'T12:00:00Z')))state.firstDate='';
 const t=(ru,ko)=>state.lang==='ko'?ko:ru,tr=v=>v?.[state.lang]??v??'';
 const maps=query=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(query);
-function persist(){try{localStorage.setItem('kg-product-pilot-v1',JSON.stringify(state))}catch{}}
+function persist(){try{localStorage.setItem(storageKey,JSON.stringify(state))}catch{}}
 const link=(url,label,kind='')=>`<a class="action ${kind}" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>`;
 const tripView=createTripView(data,{state,t,tr,esc,link,maps});
 if(state.firstDate)state.monday=tripView.dateFor(1).getUTCDay()===1;
@@ -36,11 +40,11 @@ root.innerHTML=`<a class="skip" href="#main">${t('К содержимому','�
 }
 function toast(message){const el=root.querySelector('.toast');el.textContent=message;setTimeout(()=>{if(el.isConnected)el.textContent=''},4500)}
 root.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
-if(b.hasAttribute('data-language')){state.lang=state.lang==='ru'?'ko':'ru';if(location.protocol!=='file:'){const u=new URL(location.href);u.searchParams.set('lang',state.lang);history.replaceState(null,'',u)}try{const main=JSON.parse(localStorage.getItem('kazakhstan-guide-v1')||'{}');localStorage.setItem('kazakhstan-guide-v1',JSON.stringify({...main,lang:state.lang}));}catch{}render();return}
+if(b.hasAttribute('data-language')){state.lang=state.lang==='ru'?'ko':'ru';if(location.protocol!=='file:'){const u=new URL(location.href);u.searchParams.set('lang',state.lang);history.replaceState(null,'',u)}try{const main=JSON.parse(localStorage.getItem('kazakhstan-guide-v1')||'{}');localStorage.setItem('kazakhstan-guide-v1',JSON.stringify({...main,lang:state.lang}));}catch{}render();root.querySelector('[data-language]')?.focus({preventScroll:true});return}
 if(b.dataset.day){state.day=Number(b.dataset.day);state.stage='day1';render();document.getElementById('title-day1')?.focus({preventScroll:true});document.getElementById('main')?.scrollIntoView({block:'start'});return}
 if(b.dataset.stage){state.stage=b.dataset.stage;if(state.stage==='day1')state.day=1;render();document.getElementById('title-'+state.stage)?.focus({preventScroll:true});return}
 if(b.dataset.choice){state[b.dataset.choice]=b.dataset.value;render();root.querySelector(`[data-choice="${b.dataset.choice}"][data-value="${b.dataset.value}"]`)?.focus({preventScroll:true});return}
-if(b.hasAttribute('data-download')){document.documentElement.dataset.settings=JSON.stringify(state);document.documentElement.dataset.siteHome=siteHome;const clean=document.documentElement.cloneNode(true);clean.querySelectorAll('script:not(#product-data):not(#product-runtime),style:not(#product-style),link,iframe').forEach(el=>el.remove());const cleanBody=clean.querySelector('body');cleanBody.replaceChildren(clean.querySelector('#product'),clean.querySelector('#product-data'),clean.querySelector('#product-runtime'));const file=new Blob(['<!doctype html>\n'+clean.outerHTML],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download='Almaty-guide-'+state.lang+'.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast(t('Памятка сохранена в HTML. Откройте её в браузере.','HTML 안내를 저장했습니다. 브라우저에서 열어 보세요.'));return}
+if(b.hasAttribute('data-download')){const clean=document.documentElement.cloneNode(true);clean.dataset.settings=JSON.stringify(state);clean.dataset.siteHome=siteHome;clean.dataset.exportId=globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);clean.querySelectorAll('script:not(#product-data):not(#product-runtime),style:not(#product-style),link,iframe').forEach(el=>el.remove());const cleanBody=clean.querySelector('body');cleanBody.replaceChildren(clean.querySelector('#product'),clean.querySelector('#product-data'),clean.querySelector('#product-runtime'));const file=new Blob(['<!doctype html>\n'+clean.outerHTML],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download='Almaty-guide-'+state.lang+'.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast(t('Памятка сохранена в HTML. Откройте её в браузере.','HTML 안내를 저장했습니다. 브라우저에서 열어 보세요.'));return}
 if(b.hasAttribute('data-print')){render(true);root.querySelectorAll('details').forEach(d=>d.open=true);window.print();render();}
 });
 root.addEventListener('input',e=>{if(e.target.hasAttribute('data-expense')){const v=e.target.value;if(v!==''&&(!Number.isFinite(Number(v))||Number(v)<0||Number(v)>100000000)){e.target.setCustomValidity(t('Введите неотрицательную сумму до 100 000 000','0부터 100,000,000까지 입력하세요'));return}e.target.setCustomValidity('');state.expenses[e.target.dataset.expense]=v;persist();root.querySelector('.budget-total').textContent=tripView.total();root.querySelector('[data-budget-summary]').innerHTML=tripView.budgetSummary();}});

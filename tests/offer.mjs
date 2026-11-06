@@ -10,7 +10,6 @@ try{
   const context=await browser.newContext({viewport:{width,height:950}}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
   const check=async(name,fn)=>{await fn();checks.push(`${lang}/${width}/${name}`);};
-  await context.route('**/api/guide-access?*',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'service_not_configured'})}));
   try{
    await page.goto(`${base}/guides/almaty/offer/?lang=${lang}`);
    await check('offer shows agreed price, no fake checkout or unavailable-login links',async()=>{
@@ -57,16 +56,9 @@ try{
    await page.locator('main > a').click();assert.match(page.url(),new RegExp(`offer/\\?lang=${lang}`));
    await check('mobile offer fits viewport',async()=>{assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);});
    if(width!==320)await page.screenshot({path:`${out}/offer-${lang}-${width}.png`,fullPage:true});
-   await page.goto(`${base}/guides/almaty/access/?lang=${lang}`);
-   await page.locator('[data-access-unavailable]').waitFor();
-   await check('unconfigured real login has helpful exits and collects no email',async()=>{
-    assert.equal(await page.locator('input,#request,#verify').count(),0);
-    assert.equal(await page.locator('[data-access-unavailable] a').count(),2);
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
-   });
   }finally{await context.close();}
  }
  assert.deepEqual(errors,[]);
- await writeFile(`${out}/validation.json`,JSON.stringify({checkedAt:'2026-10-24',count:checks.length,checks,errors,note:'Local presentation and explicit unavailable-login state. No live mail, payments or private-content deployment.'},null,2));
+ await writeFile(`${out}/validation.json`,JSON.stringify({checkedAt:new Date().toISOString(),count:checks.length,checks,errors,note:'Public offer and sample only. Unpublished access is tested separately.'},null,2));
  console.log(`Passed ${checks.length} product packaging checks.`);
 }finally{await browser.close();}

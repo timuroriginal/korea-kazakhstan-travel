@@ -1,7 +1,7 @@
 // Adapt the reviewed editorial package to the existing destination renderer.
-// Usage: node scripts/import-astana.mjs path/to/astana-content.json
+// Usage: node scripts/import-astana.mjs [path/to/astana-content.json]
 import fs from 'node:fs/promises';
-const input=JSON.parse(await fs.readFile(process.argv[2],'utf8'));
+const input=JSON.parse(await fs.readFile(process.argv[2]||new URL('../data/research/astana-package.json',import.meta.url),'utf8'));
 const pair=(ru,ko)=>({ru,ko});
 const category={architecture:'architecture',culture:'culture',religion:'culture',museum:'culture',parks:'parks',shopping:'shopping',food:'food',nature:'nature',history:'culture'};
 const places=input.places.filter(p=>p.decision!=='reserve').map(p=>({
@@ -24,6 +24,13 @@ for(const p of additions.places){
 }
 const sections={arrival:'Прибытие',bus:'Городской транспорт',lrt:'Городской транспорт',stay:'Проживание',food:'Еда',season:'Сезоны'};
 const practical=input.practical.map(p=>({id:p.id,section:sections[p.id.replace('astana-practical-','')],title:p.title.ru,titleKo:p.title.ko,copy:{answer:p.text,detail:pair('',''),phrase:p.phrase},sources:p.sources}));
+for(const [id,fields] of Object.entries(additions.practicalOverrides||{})){
+ const row=practical.find(p=>p.id===id);
+ if(!row)throw Error('Reviewed practical override references unknown topic '+id);
+ if(Object.keys(fields).some(key=>key!=='copy'))throw Error('Unsupported practical override '+id);
+ for(const key of ['answer','detail'])if(!['ru','ko'].every(lang=>typeof fields.copy?.[key]?.[lang]==='string'))throw Error('Invalid practical adaptation '+id);
+ Object.assign(row,fields);
+}
 if(practical.some(p=>!p.section))throw Error('Unknown practical section');
 const routes=input.routes.flatMap(r=>r.stops.map((id,index)=>({id:r.id,day:r.id.includes('third')?3:r.id.includes('two')||r.id.includes('right')?2:1,order:index+1,placeId:id,parent:r.id.includes('third')?'astana-first-days':null,copy:{title:r.title,note:index===0?r.text:pair('','')}})));
 const alzhir=routes.find(r=>r.id==='astana-third-alzhir'&&r.order===1);
