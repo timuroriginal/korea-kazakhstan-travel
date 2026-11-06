@@ -1,0 +1,15 @@
+{
+  "name": "kazakhstan-guide",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=24"},
+  "scripts": {
+    "build": "node tests/content-build.mjs && node guides/almaty/build.mjs && node guides/almaty/build-sample.mjs && node scripts/build-public.mjs && node tests/public-build.mjs",
+    "preview": "node scripts/serve-public.mjs",
+    "test": "npm run build && node scripts/test-public.mjs",
+    "test:content": "node tests/content-build.mjs",
+    "test:access": "node tests/access-api.mjs"
+  },
+  "devDependencies": {"playwright": "1.62.1"}
+}
